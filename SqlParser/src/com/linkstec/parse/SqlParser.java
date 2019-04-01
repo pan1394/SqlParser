@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.linkstec.sql.SqlField;
+
 public class SqlParser {
 
 	public static void process(File source) throws IOException {
@@ -22,8 +24,9 @@ public class SqlParser {
 			List<String> obj = new ArrayList<>();
 			tmp.add(obj);
 			while ((line = reader.readLine()) != null) {
+				line = line.trim();
 				obj.add(line);
-				if (preline != null && "°æ•Ω©`•»Ãıº˛°ø".equals(preline.trim())) {
+				if (preline != null && "„Äê„ÇΩ„Éº„ÉàÊù°‰ª∂„Äë".equals(preline.trim())) {
 					obj = new ArrayList<>();
 					tmp.add(obj);
 				}
@@ -39,7 +42,15 @@ public class SqlParser {
 			collection.add(convertedObj);
 			System.out.println("==================="+count+"=======================");
 			System.out.println("Tables:" + convertedObj.getTables());
-			System.out.println("Items:" + convertedObj.getItems());
+			System.out.println("Items:" );
+			List<SqlField> fs = convertedObj.getItems();
+			for(SqlField f : fs) {
+				System.out.println(f.toString());
+				if(!f.isSimpleField()) {
+					System.out.println("Ê≠§ËäÇÁÇπÂ≠òÂú®Â≠êÈ°πÔºåÂ¶Ç‰∏ãÔºö");
+					System.out.println(f.getSubFields());
+				}
+			}
 			System.out.println("Conditions:" + convertedObj.getCondition());
 			System.out.println("Order:" + convertedObj.getOrder());
 			System.out.println("===================end=====================");
@@ -56,7 +67,7 @@ public class SqlParser {
 	}
 
 	public static void main(String... args) throws IOException {
-		File file = new File("d:/txt.txt");
+		File file = new File("d:/txt3.txt");
 		process(file);
 	}
 	

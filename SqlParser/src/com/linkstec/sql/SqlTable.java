@@ -1,21 +1,16 @@
 package com.linkstec.sql;
 
-public class SqlTable extends SqlNode{
+import org.apache.commons.lang3.StringUtils;
+
+import com.linkstec.sql.constants.SQLConstants;
+import com.linkstec.utils.Utlities;
+
+public class SqlTable extends SqlNode {
 
 	private String tableName;
-	
+
 	private String alias;
- 
-	public SqlTable(String tableName, String alias) {
-		super(tableName);
-		this.tableName = tableName;
-		this.alias = alias;
-	}
-	
-	public SqlTable(String tableName) {
-		this(tableName, null);
-	}
- 
+
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
@@ -23,7 +18,7 @@ public class SqlTable extends SqlNode{
 	public String getTableName() {
 		return tableName;
 	}
-	
+
 	public String getAlias() {
 		return alias;
 	}
@@ -31,9 +26,26 @@ public class SqlTable extends SqlNode{
 	public void setAlias(String alias) {
 		this.alias = alias;
 	}
-	
+
+	@Override
+	protected void convert() {
+		super.convert();
+		if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
+			String[] main = Utlities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+			this.alias = StringUtils.trimToEmpty(main[1]);
+			this.tableName = StringUtils.trimToEmpty(main[0]);
+		} else {
+			this.alias = "";
+			this.tableName = this.rawString;
+		}
+	}
+
 	@Override
 	public String toString() {
-		return this.tableName;
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.tableName);
+		if (StringUtils.isNotEmpty(this.alias))
+			sb.append(SQLConstants.REGEX_SPLIT_CHAR_AS + this.alias);
+		return sb.toString();
 	}
 }
