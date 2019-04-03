@@ -9,11 +9,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.linkstec.sql.SqlCondition;
 import com.linkstec.sql.SqlField;
+import com.linkstec.sql.SqlGroup;
 import com.linkstec.sql.SqlJoinNode;
-import com.linkstec.sql.SqlNode;
+import com.linkstec.sql.SqlOrder;
 import com.linkstec.sql.SqlTable;
+import com.linkstec.sql.SqlWhereNode;
 import com.linkstec.sql.constants.SQLConstants;
 
 public class SqlObject {
@@ -24,8 +25,9 @@ public class SqlObject {
 	private static final String qJoin = "【結合条件】";
 	private static final String qCondition = "【抽出条件】";
 	private static final String qOrder = "【ソート条件】";
+	private static final String qGroup = "【集計条件】";
 	
-	private static List<String> keys = Arrays.asList(qItem, qTable, qJoin, qCondition, qOrder,jTable); 
+	private static List<String> keys = Arrays.asList(qItem, qTable, qJoin, qCondition, qOrder,jTable, qGroup); 
 	
 	private static List<String> keys2 = Arrays.asList("SELECT", "FROM", "WHERE"); 
 	
@@ -69,12 +71,13 @@ public class SqlObject {
  		res.tables = parseTables(map);
 		res.items = parseItems(res.tables, map.get(qItem));
 		res.order = parseOrder(map.get(qOrder));
-		parseJCondtions(map.get(qJoin));
- 	    parseConditions(res, map.get(qCondition));
+		res.join = parseJCondtions(map.get(qJoin));
+		res.condition = parseConditions(map.get(qCondition));
+ 	    //parseConditions(res, map.get(qCondition));
 		return res;
 	}
 	
-	private static void parseJCondtions(List<String> list) {
+	private static SqlJoinNode parseJCondtions(List<String> list) {
 		SqlJoinNode joinNode = new SqlJoinNode();
 		if (list != null) {
 			for (String s : list) {
@@ -83,6 +86,7 @@ public class SqlObject {
 			}
 		}
 		System.out.println(joinNode);
+		return joinNode;
 	}
 
 	public static SqlObject parse(List<String> sqlQuery) {
@@ -110,11 +114,23 @@ public class SqlObject {
  		res.tables = parseTables(map);
 		res.items = parseItems(res.tables, map.get(qItem));
 		res.order = parseOrder(map.get(qOrder));
-		parseJCondtions(map.get(qJoin));
- 	    parseConditions(res, map.get(qCondition));
+		res.join = parseJCondtions(map.get(qJoin));
+		res.condition = parseConditions(map.get(qCondition));
+		//parseConditions(res, map.get(qCondition));
 		return res;
 	}
 	
+	private static SqlWhereNode parseConditions(List<String> list) {
+		SqlWhereNode whereNode = new SqlWhereNode();
+		if (list != null) {
+			for (String s : list) {
+				if(s.equals(SQLConstants.RAW_STRING_NULL))  break;
+				whereNode.setRawString(s);
+			}
+		}
+		return whereNode;
+	}
+
 	private static void parseConditions(SqlObject res, List<String> list) {
 //		List<SqlTable> tables = res.tables;
 //		SqlCondition previous = new SqlCondition();
@@ -197,13 +213,17 @@ public class SqlObject {
 //		return;
 	}
 
-	private SqlCondition condition;
+	private SqlWhereNode condition;
+	
+	private SqlJoinNode join;
 	
 	private List<SqlTable> tables;
 	
 	private List<SqlField> items;
 	
-	private List<SqlNode> order;
+	private SqlOrder order;
+
+	private SqlGroup group;
 	
 	private Map<String, SqlObject> subqueries = new HashMap<String, SqlObject>();
 	
@@ -257,28 +277,10 @@ public class SqlObject {
 		return new SqlTable();
 	}
 	
-	private static List<SqlNode> parseOrder(List<String> list) {
-		List<SqlNode> nodes = new ArrayList<SqlNode>();
-		if (list == null || list.size() == 0) {
-			nodes.add(new SqlNode("なし"));
-			return nodes;
-		}
-		
-		int l = list.size();
-		if (l == 1) {
-			String tmp = (list.get(0));
-			int idx = -1;
-			if(tmp.contains("ORDER BY")) {
-				idx = tmp.indexOf("ORDER BY");
-				tmp = tmp.substring(idx + 8);
-				nodes.add(new SqlNode(tmp.trim()));
-			}else {
-				nodes.add(new SqlNode(tmp.trim()));
-			}
-		} else {
-			System.err.println("==================not only one order===============");
-		}
-		return nodes;
+	private static SqlOrder parseOrder(List<String> list) {
+		SqlOrder order = new SqlOrder();
+		list.forEach(order::setRawString);
+		return order;
 	}
 
 	private static List<SqlField> parseItems(List<SqlTable> tables, List<String> param) {
@@ -317,11 +319,17 @@ public class SqlObject {
 		return this.items;
 	}
 	
-	public SqlCondition	getCondition() {
+	public SqlWhereNode	getCondition() {
 		return this.condition;
 	}
 	
-	public List<SqlNode> getOrder() {
+	public SqlOrder getOrder() {
 		return this.order;
 	}
+
+	public SqlJoinNode getJoin() {
+		return join;
+	}
+ 
+	
 }

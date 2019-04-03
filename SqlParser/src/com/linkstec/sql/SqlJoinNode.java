@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.linkstec.sql.constants.JoinType;
 import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utlities;
+import com.linkstec.utils.Utilities;
 
 public class SqlJoinNode extends SqlNode {
 
@@ -19,7 +19,6 @@ public class SqlJoinNode extends SqlNode {
 	private SqlNode table;
 	private JoinType joinType;
 	private List<SqlCondition> conditions = new ArrayList<>();
-	
 	
 	public SqlNode getTable() {
 		return table;
@@ -49,17 +48,17 @@ public class SqlJoinNode extends SqlNode {
 	@Override
 	protected void convert() {
 		super.convert();
-		if(Utlities.contains(SQLConstants.CONDITON_OPERATOR, getRawString())) { // condition object
-			System.out.println(rawString);
+		if(Utilities.contains(SQLConstants.CONDITON_OPERATOR, getRawString())) { // condition object
+			//System.out.println(rawString);
 			SqlCondition con = new SqlCondition();
 			con.setRawString(rawString);
 			conditions.add(con);
 		}else {
 			//parse table and joinType
 			if(getRawString().contains(SQLConstants.CONDITON_JOIN)) {
-				String[] main = Utlities.crop(rawString, SQLConstants.CONDITON_JOIN);
+				String[] main = Utilities.crop(rawString, SQLConstants.CONDITON_JOIN);
 				this.table = new SqlNode(main[0]);
-				this.joinType  = Enum.valueOf(JoinType.class, Utlities.fetch(JoinType.getAll(), main[1])) ;
+				this.joinType  = Enum.valueOf(JoinType.class, Utilities.fetch(JoinType.getAll(), main[1])) ;
 			}else {
 				
 			}
@@ -68,6 +67,13 @@ public class SqlJoinNode extends SqlNode {
 	
 	@Override
 	public String toString() {
-		 return super.toString();
+		StringBuilder sb = new StringBuilder();
+		if(this.joinType  != null) {
+			sb.append(this.joinType.toString() + " JOIN ON \n");
+		}
+		for(SqlCondition c : this.conditions) {
+			sb.append(c.toString() + "\n");
+		}
+		 return sb.toString();
 	}
 }

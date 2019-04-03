@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utlities;
+import com.linkstec.utils.Utilities;
 
 public class SqlField extends SqlNode {
 
@@ -106,13 +106,18 @@ public class SqlField extends SqlNode {
 		//this.tableChar2Space();
 		if (!contains(functions, this.rawString)) { // no functions
 			if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-				String[] main = Utlities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
-				String[] parts = Utlities.crop(main[0], SQLConstants.REGEX_SPLIT_CHAR_DOT);
-				this.owner = new SqlNode(parts[0]);
-				this.columnName = new SqlNode(parts[1]);
+				String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+				if(main[0].contains(SQLConstants.REGEX_SPLIT_CHAR_DOT)) {
+					String[] parts = Utilities.crop(main[0], SQLConstants.REGEX_SPLIT_CHAR_DOT);
+					this.owner = new SqlNode(parts[0]);
+					this.columnName = new SqlNode(parts[1]);
+				}else {
+					this.owner = new SqlNode("");
+					this.columnName = new SqlNode(main[0]);
+				}
 				this.alias = StringUtils.trimToEmpty(main[1]);
 			} else if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_DOT)) { // no alias
-				String[] parts = Utlities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_DOT);
+				String[] parts = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_DOT);
 				this.owner = new SqlNode(parts[0]);
 				this.columnName = new SqlNode(parts[1]);
 				this.alias = "";
@@ -125,7 +130,7 @@ public class SqlField extends SqlNode {
 		} else { // has functions
 			String expression = this.rawString;
 			if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-				String[] main = Utlities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+				String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
 				this.alias = StringUtils.trimToEmpty(main[1]);
 				expression = main[0];
 			}
@@ -137,7 +142,7 @@ public class SqlField extends SqlNode {
 	}
 
 	private void splitLevel2(String expression) {
-		System.out.println(String.format("processed exression: %s", expression));
+		//System.out.println(String.format("processed exression: %s", expression));
 		// 使用+-*/, SUM,AVG,COUNT, CASE WHEN
 		Pattern p3 = Pattern.compile("(\\S+)[\\.．](\\s*\\S+)(?<![\\(\\)])");
 		String[] x = null;

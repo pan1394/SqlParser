@@ -3,7 +3,7 @@ package com.linkstec.sql;
 import org.apache.commons.lang3.StringUtils;
 
 import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utlities;
+import com.linkstec.utils.Utilities;
 
 public class SqlTable extends SqlNode {
 
@@ -31,7 +31,7 @@ public class SqlTable extends SqlNode {
 	protected void convert() {
 		super.convert();
 		if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-			String[] main = Utlities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+			String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
 			this.alias = StringUtils.trimToEmpty(main[1]);
 			this.tableName = StringUtils.trimToEmpty(main[0]);
 		} else {

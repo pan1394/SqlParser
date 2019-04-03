@@ -2,7 +2,7 @@ package com.linkstec.sql;
 
 import java.util.List;
 
-public class SqlSelectNode extends SqlNode{
+public class SqlGroup extends SqlNode{
   
 
 	private List<SqlField> items;

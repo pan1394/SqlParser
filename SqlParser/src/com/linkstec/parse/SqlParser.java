@@ -39,9 +39,10 @@ public class SqlParser {
 		for(List<String> obj : tmp) {
 			++count;
 			SqlObject convertedObj = convert(obj);
+			if(convertedObj.getTables().isEmpty()) continue;
 			collection.add(convertedObj);
 			System.out.println("==================="+count+"=======================");
-			System.out.println("Tables:" + convertedObj.getTables());
+			System.out.println("Table:" + convertedObj.getTables());
 			System.out.println("Items:" );
 			List<SqlField> fs = convertedObj.getItems();
 			for(SqlField f : fs) {
@@ -51,7 +52,8 @@ public class SqlParser {
 					System.out.println(f.getSubFields());
 				}
 			}
-			System.out.println("Conditions:" + convertedObj.getCondition());
+			System.out.println("Join conditions: \n" + convertedObj.getJoin());
+			System.out.println("Query Conditions: \n" + convertedObj.getCondition());
 			System.out.println("Order:" + convertedObj.getOrder());
 			System.out.println("===================end=====================");
 			System.out.println();
@@ -67,7 +69,7 @@ public class SqlParser {
 	}
 
 	public static void main(String... args) throws IOException {
-		File file = new File("d:/txt3.txt");
+		File file = new File("d:/txt5.txt");
 		process(file);
 	}
 	

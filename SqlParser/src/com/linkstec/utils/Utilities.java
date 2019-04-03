@@ -2,7 +2,7 @@ package com.linkstec.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class Utlities {
+public class Utilities {
 
 	public static String tab2Space(String rawString) {
 		return rawString.replaceAll("\\t+", " ");
@@ -39,5 +39,26 @@ public class Utlities {
 				return key;
 		}
 		return "";
+	}
+	
+	public static String[] split(String string, String regex) {
+		String[] items = string.split(regex);
+		for(int i=0; i<items.length; i++) {
+			items[i] = StringUtils.trimToEmpty(items[i]);
+		}
+		return items;
+	}
+	
+	public static String abstractStringRange(String string, String start, String end) {
+		int idx1 = -1;
+		int idx2 = -1;
+		idx1 = string.indexOf(start);
+		idx2 = string.lastIndexOf(end);
+		if(idx1 != idx2 && idx1>0 && idx2>0) {
+			return string.substring(idx1, idx2-end.length());
+		}
+		return string;
+				
+				
 	}
 }
