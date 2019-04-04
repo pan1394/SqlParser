@@ -2,8 +2,8 @@ package com.linkstec.sql;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utilities;
+import com.linkstec.sql.constants.SqlConstants;
+import com.linkstec.utils.SqlUtilities;
 
 public class SqlCondition extends SqlNode {
 
@@ -37,17 +37,17 @@ public class SqlCondition extends SqlNode {
 	protected void convert() {
 		String partString = "";
 		super.convert();
-		if (Utilities.contains(SQLConstants.CONDITON_AND_OR, this.rawString)) { 
-			String splitChar = Utilities.fetch(SQLConstants.CONDITON_AND_OR, rawString);
+		if (SqlUtilities.contains(SqlConstants.CONDITON_AND_OR, this.rawString)) { 
+			String splitChar = SqlUtilities.fetch(SqlConstants.CONDITON_AND_OR, rawString);
 			//String[] main = Utilities.crop(rawString, splitChar);
 			this.concatString = splitChar;
 			partString = StringUtils.removeFirst(rawString, splitChar);
 		}else{
 			partString = rawString;
 		}
-		String op = Utilities.fetch(SQLConstants.CONDITON_OPERATOR, partString);
+		String op = SqlUtilities.fetch(SqlConstants.CONDITON_OPERATOR, partString);
 		this.operator = new SqlNode(op);
-		String[] parts = Utilities.crop(partString, op);
+		String[] parts = SqlUtilities.crop(partString, op);
 		this.left = SqlNode.create(SqlField.class);
 		this.right = SqlNode.create(SqlField.class);
 		left.setRawString(parts[0]);

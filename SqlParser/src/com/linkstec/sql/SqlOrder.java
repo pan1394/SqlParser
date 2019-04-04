@@ -1,39 +1,42 @@
 package com.linkstec.sql;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.linkstec.sql.constants.SqlConstants;
+import com.linkstec.utils.SqlUtilities;
 
 public class SqlOrder extends SqlNode{
   
-
-	private List<SqlField> items;
+	private List<SqlField> items = new ArrayList<>();
 	
 	public List<SqlField> getItems() {
 		return items;
 	}
 	
+	public boolean isEmpty() {
+		return items.isEmpty();
+	}
+	
+	private String sort;
 	
 	@Override
 	protected void convert() {
 		super.convert();
-//		if (list == null || list.size() == 0) {
-//			nodes.add(new SqlNode("なし"));
-//			return nodes;
-//		}
-//		
-//		int l = list.size();
-//		if (l == 1) {
-//			String tmp = (list.get(0));
-//			int idx = -1;
-//			if(tmp.contains("ORDER BY")) {
-//				idx = tmp.indexOf("ORDER BY");
-//				tmp = tmp.substring(idx + 8);
-//				nodes.add(new SqlNode(tmp.trim()));
-//			}else {
-//				nodes.add(new SqlNode(tmp.trim()));
-//			}
-//		} else {
-//			System.err.println("==================not only one order===============");
-//		}
+		if(StringUtils.contains(rawString, SqlConstants.REGEX_ORDER_BY)) {
+			if(SqlUtilities.contains(SqlConstants.ORDER_VALE, rawString)) {
+				this.sort = SqlUtilities.fetch(SqlConstants.ORDER_VALE, rawString);
+				this.rawString = StringUtils.removeEnd(rawString, this.sort);
+			}
+			String[] all = SqlUtilities.split(rawString, SqlConstants.REGEX_SPLIT_CHAR_COMMA);
+			for(String f: all) {
+				SqlField field = SqlField.create(SqlField.class);
+				field.setRawString(f);
+				items.add(field);
+			}
+		}
 	}
 	
 	@Override
@@ -44,6 +47,9 @@ public class SqlOrder extends SqlNode{
 		}
 		items.forEach(i -> sb.append(i + ","));
 		sb.setLength(sb.length() - 1);
+		if(StringUtils.isNotBlank(sort)) {
+			sb.append(" " + this.sort);
+		}
 		return sb.toString();
 	}
 }

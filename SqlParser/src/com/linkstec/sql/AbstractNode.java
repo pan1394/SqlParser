@@ -1,6 +1,6 @@
 package com.linkstec.sql;
 
-import com.linkstec.utils.Utilities;
+import com.linkstec.utils.SqlUtilities;
 
 public abstract class AbstractNode {
 
@@ -13,7 +13,7 @@ public abstract class AbstractNode {
 	}
 
 	public void setRawString(String rawString) {
-		this.rawString = Utilities.tab2Space(rawString);
+		this.rawString = SqlUtilities.tab2Space(rawString);
 		this.convert();
 	}
 }

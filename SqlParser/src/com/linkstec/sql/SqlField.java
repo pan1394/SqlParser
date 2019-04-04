@@ -7,14 +7,15 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utilities;
+import com.linkstec.sql.constants.SqlConstants;
+import com.linkstec.utils.SqlFactory;
+import com.linkstec.utils.SqlUtilities;
 
 public class SqlField extends SqlNode {
 
 	private static String[] keys = { "+", "-", "*", "/", "×", "／", "（", "）" };
 
-	private static String[] functions = { "AVG", "SUM", "COUNT", "CASE WHEN", "SELECT" };
+	private static String[] functions = { "AVG", "SUM", "COUNT", "MAX", "CASE WHEN", "SELECT" };
 
 
 	private static String[] KEYS_FOR_CASE_WHEN = { "CASE WHEN", "CASE", "WHEN", "THEN", "ELSE", "END" };
@@ -78,10 +79,6 @@ public class SqlField extends SqlNode {
 		super.convert();
 		this.splitLevel1();
 	}
-	 
-	private void tableChar2Space() {
-		this.rawString = this.rawString.replaceAll("\\t+", " ");
-	}
 
 	@Override
 	public String toString() {
@@ -103,12 +100,11 @@ public class SqlField extends SqlNode {
 	
 
 	private void splitLevel1() {
-		//this.tableChar2Space();
 		if (!contains(functions, this.rawString)) { // no functions
-			if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-				String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
-				if(main[0].contains(SQLConstants.REGEX_SPLIT_CHAR_DOT)) {
-					String[] parts = Utilities.crop(main[0], SQLConstants.REGEX_SPLIT_CHAR_DOT);
+			if (this.rawString.contains(SqlConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
+				String[] main = SqlUtilities.crop(this.rawString, SqlConstants.REGEX_SPLIT_CHAR_AS);
+				if(main[0].contains(SqlConstants.REGEX_SPLIT_CHAR_DOT)) {
+					String[] parts = SqlUtilities.crop(main[0], SqlConstants.REGEX_SPLIT_CHAR_DOT);
 					this.owner = new SqlNode(parts[0]);
 					this.columnName = new SqlNode(parts[1]);
 				}else {
@@ -116,8 +112,8 @@ public class SqlField extends SqlNode {
 					this.columnName = new SqlNode(main[0]);
 				}
 				this.alias = StringUtils.trimToEmpty(main[1]);
-			} else if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_DOT)) { // no alias
-				String[] parts = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_DOT);
+			} else if (this.rawString.contains(SqlConstants.REGEX_SPLIT_CHAR_DOT)) { // no alias
+				String[] parts = SqlUtilities.crop(this.rawString, SqlConstants.REGEX_SPLIT_CHAR_DOT);
 				this.owner = new SqlNode(parts[0]);
 				this.columnName = new SqlNode(parts[1]);
 				this.alias = "";
@@ -129,8 +125,8 @@ public class SqlField extends SqlNode {
 			this.isExp = false;
 		} else { // has functions
 			String expression = this.rawString;
-			if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-				String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+			if (this.rawString.contains(SqlConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
+				String[] main = SqlUtilities.crop(this.rawString, SqlConstants.REGEX_SPLIT_CHAR_AS);
 				this.alias = StringUtils.trimToEmpty(main[1]);
 				expression = main[0];
 			}
@@ -156,7 +152,7 @@ public class SqlField extends SqlNode {
 			}
 			for (String a : x) {
 				Matcher m = p3.matcher(a);
-				if (m.find()) {
+				if (m.find()) { 
 					String s1 = m.group(1);
 					String s2 = m.group(2);
 					subs.add(new SqlField(new SqlNode(s1), new SqlNode(s2), null));
@@ -183,20 +179,20 @@ public class SqlField extends SqlNode {
 		String st3 = "SUM（数量範囲エリア.　値決数量×比率エリア.　比率×比率エリア.　比率値決進捗率）／契約エリア.　値決数量　×100";
 		Pattern p2 = Pattern.compile("\\w+\\S+\\.\\s+\\S+(?<![+\\-\\*\\/\\(\\)])");
 		Pattern p3 = Pattern.compile("(\\S+)[\\．\\.](\\s*\\S+)(?<![\\(\\)=])"); //
-		if (true) {
-			// String[] x = st00.split("[+\\-\\*\\/×／（）\\(\\)]");
-			String[] x = st2.split("[ =]");
-			for (String a : x) {
-				Matcher m = p3.matcher(a);
-				if (m.find()) {
-					// System.out.print (m.group());
-					System.out.print(m.group(1) + "      ");
-					System.out.println(m.group(2) + "    ");
-				}
-			}
-		} else {
+//		if (true) {
+//			// String[] x = st00.split("[+\\-\\*\\/×／（）\\(\\)]");
+//			String[] x = st2.split("[ =]");
+//			for (String a : x) {
+//				Matcher m = p3.matcher(a);
+//				if (m.find()) {
+//					// System.out.print (m.group());
+//					System.out.print(m.group(1) + "      ");
+//					System.out.println(m.group(2) + "    ");
+//				}
+//			}
+//		} 
 
-		}
-
+		SqlField f = SqlFactory.sqlField(st3);
+		System.out.println(f);
 	}
 }

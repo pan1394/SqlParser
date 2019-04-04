@@ -1,8 +1,10 @@
 package com.linkstec.utils;
 
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 
-public class Utilities {
+public class SqlUtilities {
 
 	public static String tab2Space(String rawString) {
 		return rawString.replaceAll("\\t+", " ");
@@ -25,6 +27,15 @@ public class Utilities {
 		return res;
 	}
 	
+	public static String startWith(List<String> keys, String compared) {
+		for(String key: keys) {
+			if(compared.startsWith(key)) {
+				return key;
+			}
+		}
+		return "";
+	}
+	
 	public static boolean contains(String[] keys, String compared) {
 		for (String key : keys) {
 			if (compared.contains(key))
@@ -32,6 +43,7 @@ public class Utilities {
 		}
 		return false;
 	}
+	
 	
 	public static String fetch(String[] keys, String compared) {
 		for (String key : keys) {
@@ -57,8 +69,35 @@ public class Utilities {
 		if(idx1 != idx2 && idx1>0 && idx2>0) {
 			return string.substring(idx1, idx2-end.length());
 		}
-		return string;
-				
-				
+		return string; 
 	}
+	
+	public static String leftTrim(String str) {
+		  int start = 0,end = str.length()-1;
+		  while(start<=end && (str.charAt(start)==' ' || str.charAt(start) == 9) ){
+			  start++;
+		  }
+		  return str.substring(start); 
+	}
+	
+	public static String cutRight(String string, String[] arrayOfUnwant) {
+		for(String unwanted : arrayOfUnwant) {
+			int i = string.indexOf(unwanted);
+			if(i != -1) {
+				string = string.substring(0, i-1);
+			}
+		}
+		return string;
+	}
+	
+	public static String cutLeft(String string, String[] arrayOfUnwant) {
+		for(String unwanted : arrayOfUnwant) {
+			int i = string.indexOf(unwanted);
+			if(i != -1) {
+				string = string.substring(i + unwanted.length());
+			}
+		}
+		return string;
+	}
+	
 }

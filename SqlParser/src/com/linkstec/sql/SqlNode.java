@@ -1,6 +1,5 @@
 package com.linkstec.sql;
 
-import com.linkstec.utils.Utilities;
 
 public class SqlNode extends AbstractNode{
  
@@ -30,11 +29,5 @@ public class SqlNode extends AbstractNode{
 			 e.printStackTrace();
 		}
 		return (T) new SqlNode();
-	}
-	
-	
-	public SqlNode setRawStr(String rawString) {
-		super.setRawString(rawString);
-		return this;
 	}
 }

@@ -2,21 +2,21 @@ package com.linkstec.sql;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.linkstec.sql.constants.SQLConstants;
-import com.linkstec.utils.Utilities;
+import com.linkstec.sql.constants.SqlConstants;
+import com.linkstec.utils.SqlUtilities;
 
 public class SqlTable extends SqlNode {
 
-	private String tableName;
+	private SqlNode table;
 
 	private String alias;
 
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
+	public SqlNode getTable() {
+		return table;
 	}
 
-	public String getTableName() {
-		return tableName;
+	public void setTable(SqlNode table) {
+		this.table = table;
 	}
 
 	public String getAlias() {
@@ -30,22 +30,22 @@ public class SqlTable extends SqlNode {
 	@Override
 	protected void convert() {
 		super.convert();
-		if (this.rawString.contains(SQLConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
-			String[] main = Utilities.crop(this.rawString, SQLConstants.REGEX_SPLIT_CHAR_AS);
+		if (this.rawString.contains(SqlConstants.REGEX_SPLIT_CHAR_AS)) { // has alias
+			String[] main = SqlUtilities.crop(this.rawString, SqlConstants.REGEX_SPLIT_CHAR_AS);
 			this.alias = StringUtils.trimToEmpty(main[1]);
-			this.tableName = StringUtils.trimToEmpty(main[0]);
+			this.table =new SqlNode(StringUtils.trimToEmpty(main[0]));
 		} else {
 			this.alias = "";
-			this.tableName = this.rawString;
+			this.table = new SqlNode(this.rawString);
 		}
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.tableName);
+		sb.append(this.table);
 		if (StringUtils.isNotEmpty(this.alias))
-			sb.append(SQLConstants.REGEX_SPLIT_CHAR_AS + this.alias);
+			sb.append(SqlConstants.REGEX_SPLIT_CHAR_AS + this.alias);
 		return sb.toString();
 	}
 }

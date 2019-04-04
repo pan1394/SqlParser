@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linkstec.sql.SqlField;
-
 public class SqlParser {
 
 	public static void process(File source) throws IOException {
@@ -24,7 +22,6 @@ public class SqlParser {
 			List<String> obj = new ArrayList<>();
 			tmp.add(obj);
 			while ((line = reader.readLine()) != null) {
-				line = line.trim();
 				obj.add(line);
 				if (preline != null && "【ソート条件】".equals(preline.trim())) {
 					obj = new ArrayList<>();
@@ -39,24 +36,12 @@ public class SqlParser {
 		for(List<String> obj : tmp) {
 			++count;
 			SqlObject convertedObj = convert(obj);
-			if(convertedObj.getTables().isEmpty()) continue;
+			if(convertedObj.getTable() == null) continue;
 			collection.add(convertedObj);
 			System.out.println("==================="+count+"=======================");
-			System.out.println("Table:" + convertedObj.getTables());
-			System.out.println("Items:" );
-			List<SqlField> fs = convertedObj.getItems();
-			for(SqlField f : fs) {
-				System.out.println(f.toString());
-				if(!f.isSimpleField()) {
-					System.out.println("此节点存在子项，如下：");
-					System.out.println(f.getSubFields());
-				}
-			}
-			System.out.println("Join conditions: \n" + convertedObj.getJoin());
-			System.out.println("Query Conditions: \n" + convertedObj.getCondition());
-			System.out.println("Order:" + convertedObj.getOrder());
+			System.out.println(convertedObj);
 			System.out.println("===================end=====================");
-			System.out.println();
+
 			System.out.println();
 		}
 
@@ -69,7 +54,7 @@ public class SqlParser {
 	}
 
 	public static void main(String... args) throws IOException {
-		File file = new File("d:/txt5.txt");
+		File file = new File("d:/txt10.txt");
 		process(file);
 	}
 	
