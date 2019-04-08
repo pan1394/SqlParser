@@ -67,7 +67,7 @@ public class SqlUtilities {
 		idx1 = string.indexOf(start);
 		idx2 = string.lastIndexOf(end);
 		if(idx1 != idx2 && idx1>0 && idx2>0) {
-			return string.substring(idx1, idx2-end.length());
+			return string.substring(idx1, idx2);
 		}
 		return string; 
 	}
@@ -96,6 +96,13 @@ public class SqlUtilities {
 			if(i != -1) {
 				string = string.substring(i + unwanted.length());
 			}
+		}
+		return string;
+	}
+	
+	public static String replace(String string, String[] arrayOfUnwant) {
+		for(String unwanted : arrayOfUnwant) {
+			string = string.replaceAll(unwanted, " ");
 		}
 		return string;
 	}

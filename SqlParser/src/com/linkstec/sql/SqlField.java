@@ -137,17 +137,21 @@ public class SqlField extends SqlNode {
 		}
 	}
 
+ 
+	
+	
 	private void splitLevel2(String expression) {
 		//System.out.println(String.format("processed exression: %s", expression));
 		// 使用+-*/, SUM,AVG,COUNT, CASE WHEN
 		Pattern p3 = Pattern.compile("(\\S+)[\\.．](\\s*\\S+)(?<![\\(\\)])");
 		String[] x = null;
 		if (contains(keys, expression) || contains(functions, expression)) {
+			
 			if (expression.contains("CASE WHEN")) {
-				for (String key : KEYS_FOR_CASE_WHEN)
-					expression = StringUtils.strip(expression, key);
+				expression = SqlUtilities.replace(expression, KEYS_FOR_CASE_WHEN);
 				x = expression.split("[ =]");
 			} else {
+				expression = SqlUtilities.replace(expression, functions);
 				x = expression.split("[+\\-\\*\\/×／（）\\(\\)]");
 			}
 			for (String a : x) {
@@ -177,6 +181,7 @@ public class SqlField extends SqlNode {
 		String st = "COUNT(CASE WHEN 比率エリア(統計価格)．値決確定フラグ= '0'(未確定） THEN 1 ELSE NULL END) ";
 		String st2 = "COUNT(CASE WHEN wk_日別値決明細．値決ステータス（市況価格）= 3'(値決済） THEN 1 ELSE NULL END)/COUNT(1)";
 		String st3 = "SUM（数量範囲エリア.　値決数量×比率エリア.　比率×比率エリア.　比率値決進捗率）／契約エリア.　値決数量　×100";
+		String st4 = "SUM（数量範囲エリア(統計価格).　値決数量×比率エリア(統計価格).　比率×比率エリア(統計価格).　比率値決進捗率）／契約エリア.　値決数量　　×100";
 		Pattern p2 = Pattern.compile("\\w+\\S+\\.\\s+\\S+(?<![+\\-\\*\\/\\(\\)])");
 		Pattern p3 = Pattern.compile("(\\S+)[\\．\\.](\\s*\\S+)(?<![\\(\\)=])"); //
 //		if (true) {
@@ -192,7 +197,7 @@ public class SqlField extends SqlNode {
 //			}
 //		} 
 
-		SqlField f = SqlFactory.sqlField(st3);
+		SqlField f = SqlFactory.sqlField(st4);
 		System.out.println(f);
 	}
 }
