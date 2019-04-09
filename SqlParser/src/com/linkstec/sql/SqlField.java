@@ -106,13 +106,13 @@ public class SqlField extends SqlNode {
 				if(main[0].contains(SqlConstants.REGEX_SPLIT_CHAR_DOT)) {
 					String[] parts = SqlUtilities.crop(main[0], SqlConstants.REGEX_SPLIT_CHAR_DOT);
 					this.owner = new SqlNode(parts[0]);
-					this.columnName = new SqlNode(parts[1]);
+					this.columnName = new SqlNode( parts[1]);
 				}else {
 					this.owner = new SqlNode("");
 					this.columnName = new SqlNode(main[0]);
 				}
 				this.alias = StringUtils.trimToEmpty(main[1]);
-			} else if (this.rawString.contains(SqlConstants.REGEX_SPLIT_CHAR_DOT)) { // no alias
+			} else if (SqlUtilities.contains(SqlConstants.REGEX_SPLIT_DOT, rawString)) { // no alias
 				String[] parts = SqlUtilities.crop(this.rawString, SqlConstants.REGEX_SPLIT_CHAR_DOT);
 				this.owner = new SqlNode(parts[0]);
 				this.columnName = new SqlNode(parts[1]);
@@ -152,13 +152,22 @@ public class SqlField extends SqlNode {
 				x = expression.split("[ =]");
 			} else {
 				expression = SqlUtilities.replace(expression, functions);
-				x = expression.split("[+\\-\\*\\/×／（）\\(\\)]");
+				x = expression.split("[+\\-\\*\\/×／]");
 			}
 			for (String a : x) {
-				Matcher m = p3.matcher(a);
+				String tmp = a.trim();
+				if(tmp.length() >= 2) {
+					int fchar = tmp.charAt(0);
+					int lchar = tmp.charAt(tmp.length()-1);
+					if( fchar == '(' || fchar == '（' ) tmp = tmp.substring(1);
+					if( lchar == ')' || lchar == '）' ) tmp = tmp.substring(0, tmp.length()-1);
+				}
+				
+				Matcher m = p3.matcher(tmp);
 				if (m.find()) { 
 					String s1 = m.group(1);
 					String s2 = m.group(2);
+					s2 = SqlUtilities.leftTrimBlank(s2);
 					subs.add(new SqlField(new SqlNode(s1), new SqlNode(s2), null));
 				}
 			}
@@ -183,7 +192,7 @@ public class SqlField extends SqlNode {
 		String st3 = "SUM（数量範囲エリア.　値決数量×比率エリア.　比率×比率エリア.　比率値決進捗率）／契約エリア.　値決数量　×100";
 		String st4 = "SUM（数量範囲エリア(統計価格).　値決数量×比率エリア(統計価格).　比率×比率エリア(統計価格).　比率値決進捗率）／契約エリア.　値決数量　　×100";
 		Pattern p2 = Pattern.compile("\\w+\\S+\\.\\s+\\S+(?<![+\\-\\*\\/\\(\\)])");
-		Pattern p3 = Pattern.compile("(\\S+)[\\．\\.](\\s*\\S+)(?<![\\(\\)=])"); //
+		Pattern p3 = Pattern.compile("(\\S+)[\\.．](\\s*\\S+)(?<![\\(\\)])");
 //		if (true) {
 //			// String[] x = st00.split("[+\\-\\*\\/×／（）\\(\\)]");
 //			String[] x = st2.split("[ =]");
@@ -197,7 +206,7 @@ public class SqlField extends SqlNode {
 //			}
 //		} 
 
-		SqlField f = SqlFactory.sqlField(st4);
+		SqlField f = SqlFactory.sqlField(st3);
 		System.out.println(f);
 	}
 }

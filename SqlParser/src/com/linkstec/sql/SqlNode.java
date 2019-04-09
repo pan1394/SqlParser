@@ -1,5 +1,6 @@
 package com.linkstec.sql;
 
+import com.linkstec.utils.SqlUtilities;
 
 public class SqlNode extends AbstractNode{
  
@@ -8,7 +9,7 @@ public class SqlNode extends AbstractNode{
 	}
 	
 	public SqlNode(String node) {
-		this.rawString = node;
+		this.rawString = SqlUtilities.leftTrimAllBlank( node);
 	}
 	
 	@Override

@@ -14,6 +14,7 @@ public class SqlConstants {
 	public static final String CONDITON_JOIN = "ーー";
 	public static final String CONDITON_AND_OR[] = {" AND", " OR"};
 	public static final String CONDITON_JOIN_SYBOL[] = {"ーー", "LEFT", "RIGHT", "JOIN"};
+	public static final String REGEX_SPLIT_DOT[] = {".", "．"};
 	
 	
 	public static final String CONDITON_EXISTS = "EXISTS";

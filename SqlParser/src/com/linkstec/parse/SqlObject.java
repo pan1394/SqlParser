@@ -152,7 +152,7 @@ public class SqlObject extends SqlNode{
 				if(SqlUtilities.contains(SqlConstants.REGEX_START_PARENT, first) && SqlUtilities.contains(SqlConstants.REGEX_END_PARENT, last)) {
 					List<String> subs = l1.subList(1, l1.size() -1 );
 					List<String> p = new ArrayList<>();
-					subs.forEach(o -> p.add(SqlUtilities.leftTrim(o)));
+					subs.forEach(o -> p.add(SqlUtilities.leftTrimBlank(o)));
 					SqlTable tbl = new SqlTable();
 					tbl.setTable(SqlObject.parse(p));
 					String endChar = SqlUtilities.fetch(SqlConstants.REGEX_END_PARENT, last);

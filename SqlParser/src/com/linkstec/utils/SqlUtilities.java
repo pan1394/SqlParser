@@ -72,9 +72,19 @@ public class SqlUtilities {
 		return string; 
 	}
 	
-	public static String leftTrim(String str) {
+	public static String leftTrimBlank(String str) {
+		  if(StringUtils.isBlank(str)) return "";
 		  int start = 0,end = str.length()-1;
-		  while(start<=end && (str.charAt(start)==' ' || str.charAt(start) == 9) ){
+		  while(start<=end && (str.charAt(start)==' ' || str.charAt(start) == 9)){
+			  start++;
+		  }
+		  return str.substring(start); 
+	}
+	
+	public static String leftTrimAllBlank(String str) {
+		  if(StringUtils.isBlank(str)) return "";
+		  int start = 0,end = str.length()-1;
+		  while(start<=end && (str.charAt(start)==' ' || str.charAt(start) == 9) || str.charAt(start)==12288 ){
 			  start++;
 		  }
 		  return str.substring(start); 
