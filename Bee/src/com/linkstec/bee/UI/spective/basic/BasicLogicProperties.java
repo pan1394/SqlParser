@@ -16,6 +16,8 @@ import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -36,6 +39,8 @@ import com.linkstec.bee.UI.BeeConstants;
 import com.linkstec.bee.UI.BeeUIUtils;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPropertyDialog;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BTableSheet;
+import com.linkstec.bee.UI.spective.basic.logic.model.var.ComputerEditor;
+import com.linkstec.bee.UI.spective.basic.logic.model.var.ComputerLogic;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.ExpressionLogic;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.JudgeLogic;
 import com.linkstec.bee.UI.spective.basic.logic.node.BJudgeNode;
@@ -43,9 +48,9 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.UI.spective.basic.tree.BasicEditNode;
 import com.linkstec.bee.UI.spective.detail.action.BeeTransferable;
 import com.linkstec.bee.core.Application;
+import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.basic.BLogic;
 import com.linkstec.bee.core.fw.basic.BPath;
-import com.linkstec.bee.core.fw.logic.BExpression;
 import com.linkstec.bee.core.fw.logic.BLogiker;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxICell;
@@ -228,18 +233,47 @@ public class BasicLogicProperties extends JPanel {
 		}
 
 		private void init(boolean showlogic) {
-			this.setOpaque(false);
-			this.setTransfer();
-			String disc = logic.getDesc();
+			JPanel panel = new JPanel() {
+				/**
+				 * 
+				 */
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public void paint(Graphics g) {
+
+					Graphics2D g2d = (Graphics2D) g;
+					GradientPaint grdp = new GradientPaint(0, 0, BeeConstants.BACKGROUND_COLOR, 0, getHeight() / 2,
+							Color.WHITE);
+					g2d.setPaint(grdp);
+					g2d.fillRect(0, 0, getWidth(), getHeight());
+
+					super.paint(g);
+				}
+			};
+			panel.setOpaque(false);
 
 			this.setLayout(new BorderLayout());
+			this.add(panel, BorderLayout.CENTER);
+
+			if (logic instanceof JudgeLogic) {
+
+				JPanel buttonPanel = this.makeComputerLink(logic);
+				this.add(buttonPanel, BorderLayout.SOUTH);
+			}
+
+			this.setOpaque(false);
+			this.setTransfer(panel);
+			String disc = logic.getDesc();
+
+			panel.setLayout(new BorderLayout());
 
 			JPanel row = new JPanel();
 			row.setOpaque(false);
 
-			FlowLayout flow = new FlowLayout();
-			flow.setAlignment(FlowLayout.LEFT);
-			row.setLayout(flow);
+			FlowLayout f = new FlowLayout();
+			f.setAlignment(FlowLayout.LEFT);
+			row.setLayout(f);
 
 			if (showlogic) {
 
@@ -269,29 +303,50 @@ public class BasicLogicProperties extends JPanel {
 			label.setIcon(BeeConstants.ACTION_ICON);
 			row.add(label);
 
-			this.add(row, BorderLayout.NORTH);
+			panel.add(row, BorderLayout.NORTH);
 
 			JComponent editor = logic.getEditor();
 			if (editor != null) {
-				this.add(editor, BorderLayout.CENTER);
+				panel.add(editor, BorderLayout.CENTER);
 			}
+		}
+
+		private JPanel makeComputerLink(BLogic logic) {
+			JButton button = new JButton("複雑計算");
+			button.setForeground(Color.BLUE);
+			button.setOpaque(false);
+			button.setBorder(null);
+			JPanel buttonPanel = new JPanel();
+			buttonPanel.setOpaque(false);
+			FlowLayout flow = new FlowLayout();
+			flow.setAlignment(FlowLayout.LEFT);
+			buttonPanel.setLayout(flow);
+
+			if (logic instanceof JudgeLogic) {
+				buttonPanel.add(button);
+				JudgeLogic ex = (JudgeLogic) logic;
+				button.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						if (ex instanceof ComputerLogic) {
+							ComputerLogic c = (ComputerLogic) ex;
+							new ComputerEditor(c);
+						} else {
+							new ComputerEditor(ex.getList());
+						}
+
+					}
+
+				});
+			}
+			return buttonPanel;
+
 		}
 
 		@Override
 		public Insets getInsets() {
 			return new Insets(s, s, s, s);
-		}
-
-		@Override
-		public void paint(Graphics g) {
-
-			Graphics2D g2d = (Graphics2D) g;
-			GradientPaint grdp = new GradientPaint(0, 0, BeeConstants.BACKGROUND_COLOR, 0, getHeight() / 2,
-					Color.WHITE);
-			g2d.setPaint(grdp);
-			g2d.fillRect(0, 0, getWidth(), getHeight());
-
-			super.paint(g);
 		}
 
 		public BLogic getLogic() {
@@ -320,7 +375,7 @@ public class BasicLogicProperties extends JPanel {
 					}
 				}
 				if (isObject) {
-					BExpression exObj = ex.getExpression(null);
+					BValuable exObj = ex.getExpression(null);
 					if (exObj instanceof mxICell) {
 						mxICell cell = (mxICell) exObj;
 						cell.getGeometry().setRelative(false);
@@ -333,8 +388,8 @@ public class BasicLogicProperties extends JPanel {
 			return (BNode) logic.getPath().getCell();
 		}
 
-		protected void setTransfer() {
-			setTransferHandler(new TransferHandler() {
+		protected void setTransfer(JPanel panel) {
+			panel.setTransferHandler(new TransferHandler() {
 				/**
 				 * 
 				 */

@@ -2,8 +2,10 @@ package com.linkstec.bee.UI.spective.basic.logic.node.table;
 
 import java.util.List;
 
+import com.linkstec.bee.UI.thread.BeeThread;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.ITableSql;
+import com.linkstec.bee.core.fw.logic.BInvoker;
 
 public class BTableSelectItemsNode extends BTableRecordListNode {
 
@@ -30,7 +32,28 @@ public class BTableSelectItemsNode extends BTableRecordListNode {
 			}
 			return "SELECT * ";
 		}
-		return this.getSqlItemValue(select, ",", list, tsql);
+
+		Thread t = Thread.currentThread();
+		if (t instanceof BeeThread) {
+			BeeThread bee = (BeeThread) t;
+			bee.addUserAttribute("PICKUP_SELECT", "PICKUP_SELECT");
+		}
+
+		String sql = this.getSqlItemValue(select, ",", list, tsql);
+
+		if (t instanceof BeeThread) {
+			BeeThread bee = (BeeThread) t;
+			Object obj = bee.getUserAttribute("PICKUP_SELECT");
+			if (obj instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<BInvoker> selects = (List<BInvoker>) obj;
+				tsql.getSelectInfos().addAll(selects);
+
+			}
+			bee.removeUserAttribute("PICKUP_SELECT");
+		}
+
+		return sql;
 
 	}
 

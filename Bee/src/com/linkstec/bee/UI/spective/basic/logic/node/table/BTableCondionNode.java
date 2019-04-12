@@ -2,6 +2,8 @@ package com.linkstec.bee.UI.spective.basic.logic.node.table;
 
 import java.util.List;
 
+import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
+import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.fw.basic.BJudgeLogic;
 import com.linkstec.bee.core.fw.basic.ITableSql;
 import com.linkstec.bee.core.fw.logic.BInvoker;
@@ -36,6 +38,7 @@ public class BTableCondionNode extends BTableValueNode {
 
 	@Override
 	public Object getValue() {
+		expression.addUserAttribute("FOR_DISPLAY", "FOR_DISPLAY");
 		return expression.getSql();
 	}
 
@@ -62,6 +65,11 @@ public class BTableCondionNode extends BTableValueNode {
 	@Override
 	public String getSQLExp(ITableSql sql) {
 		return expression.getSql();
+	}
+
+	public void clicked(BasicLogicSheet sheet) {
+		Application.getInstance().getBasicSpective().getPropeties().setTarget(this.expression, null);
+
 	}
 
 }

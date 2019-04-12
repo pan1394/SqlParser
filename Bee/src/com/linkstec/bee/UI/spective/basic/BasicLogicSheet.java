@@ -56,15 +56,20 @@ import com.linkstec.bee.UI.spective.basic.logic.model.LogicList;
 import com.linkstec.bee.UI.spective.basic.logic.model.NewLayerClassLogic;
 import com.linkstec.bee.UI.spective.basic.logic.model.data.PluralDataLogicList;
 import com.linkstec.bee.UI.spective.basic.logic.model.provider.ProviderLogics;
+import com.linkstec.bee.UI.spective.basic.logic.model.table.BFixedValueLogic;
+import com.linkstec.bee.UI.spective.basic.logic.model.var.DataCopyLogic;
+import com.linkstec.bee.UI.spective.basic.logic.model.var.JudgeLogic;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.VarLogicList;
 import com.linkstec.bee.UI.spective.basic.logic.node.BActionNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BActionPropertyNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BComponentNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.BDataCopyNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BDetailNodeWrapper;
 import com.linkstec.bee.UI.spective.basic.logic.node.BGroupNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BLabelNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BProcessTypeNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.BTansferHolderNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.layout.BLogicLayout;
 import com.linkstec.bee.UI.spective.basic.tree.BasicDataSelectionNode;
 import com.linkstec.bee.UI.spective.basic.tree.BasicEditNode;
@@ -75,7 +80,9 @@ import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.CodecAction;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
+import com.linkstec.bee.core.codec.basic.BasicGenUtils;
 import com.linkstec.bee.core.codec.util.BValueUtils;
+import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.BValuable;
@@ -155,6 +162,7 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 				BasicModel model = (BasicModel) getEditorModel();
 				List<BNode> nodes = model.getBNodes();
 				for (BNode node : nodes) {
+
 					if (node instanceof BActionPropertyNode) {
 						BActionPropertyNode a = (BActionPropertyNode) node;
 						validateModelIOs(a, BasicLogicSheet.this);
@@ -244,10 +252,15 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 	private void makeRelaction(BNode node) {
 		boolean hasPrevious = false;
 		if (node instanceof ILogicCell) {
+
 			ILogicCell nlogic = (ILogicCell) node;
 			BLogic l = nlogic.getLogic();
 			if (l == null) {
 				return;
+			}
+			if (l instanceof JudgeLogic) {
+				System.out.println(nlogic.hashCode() + ":" + l.getClass().getName() + ":" + l.hashCode() + ":"
+						+ nlogic.toString());
 			}
 			BPath npath = nlogic.getLogic().getPath();
 			if (!npath.getCell().equals(nlogic)) {
@@ -358,6 +371,9 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 				Object obj = evt.getProperty("cells");
 				if (obj instanceof Object[]) {
 					Object[] cells = (Object[]) obj;
+					if (cellsAdded(cells)) {
+						return;
+					}
 					if (cells != null && cells.length == 1) {
 						Object parent = evt.getProperty("parent");
 						if (parent instanceof BNode) {
@@ -536,6 +552,15 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 						BParameter left = assign.getLeft();
 						values.add((BValuable) left.cloneAll());
 					}
+				} else if (obj instanceof BFixedValueLogic) {
+
+					IPatternCreator view = PatternCreatorFactory.createView();
+					BVariable fixedVar = view.createVariable();
+					fixedVar.addUserAttribute("FIXED", "FIXED");
+					fixedVar.setBClass(CodecUtils.BString());
+					fixedVar.setName("固定値");
+					fixedVar.setLogicName("@TODO");
+					values.add(fixedVar);
 				}
 			}
 			if (obj instanceof BValuable) {
@@ -545,6 +570,7 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 		}
 
 		if (values.size() > 0) {
+			// expression
 			BasicEditNode node = new BasicEditNode(this.getProject());
 			node.setUserObject(values);
 			node.setImageIcon(BeeConstants.P_EXPRESSION_ICON);
@@ -561,6 +587,30 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 			}
 			node.setDisplay(ex);
 			model.insertNodeInto(node, root, 0);
+
+			if (values.size() == 2) {
+
+				BValuable source = values.get(0);
+				BValuable target = values.get(1);
+
+				if (source != null && target != null) {
+					if (source.getBClass().isData() && target.getBClass().isData()) {
+						BasicEditNode copy = new BasicEditNode(this.getProject());
+						copy.setImageIcon(BeeConstants.REFERENCE_ICON);
+						BDataCopyNode bcl = new BDataCopyNode();
+						DataCopyLogic logic = new DataCopyLogic(null, bcl);
+						bcl.setLogic(logic);
+						logic.setSource(source);
+						logic.setTarget(target);
+						copy.setUserObject(logic);
+						copy.setDisplay(logic.getName());
+
+						model.insertNodeInto(copy, root, 0);
+					}
+				}
+
+			}
+
 		}
 
 		List<BLogic> list = ProviderLogics.getList(selection.getActionPath(), selection.isProviderReload());
@@ -619,15 +669,15 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 				if (list != null) {
 					list.add(child);
 				}
-				Object obj = child.getUserObject();
-				Object parentObj = node.getUserObject();
-				this.makeLogics(obj, parentObj, parent, selection.getActionPath(), model);
+				// Object obj = child.getUserObject();
+				// Object parentObj = node.getUserObject();
+				this.makeLogics(child, parent, selection.getActionPath(), model);
 			}
 			this.scanNode(parent, child, selection, model, list);
 		}
 	}
 
-	public void makeLogics(Object obj, Object prentObj, BasicEditNode parent, BPath parentPath,
+	public void makeLogicsback(Object obj, Object prentObj, BasicEditNode parent, BPath parentPath,
 			DefaultTreeModel model) {
 		LogicList logicList = null;
 		if (obj instanceof BAssignment) {
@@ -671,6 +721,68 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 		}
 	}
 
+	public void makeLogics(BasicDataSelectionNode select, BasicEditNode parent, BPath parentPath,
+			DefaultTreeModel model) {
+		mxCell cell = select.getTransferNode();
+
+		if (cell instanceof BTansferHolderNode) {
+			BTansferHolderNode t = (BTansferHolderNode) cell;
+			List<BNode> nodes = t.getNodes();
+			for (BNode node : nodes) {
+				this.makeCell(node, parent, parentPath, model);
+			}
+		}
+
+		this.makeCell(cell, parent, parentPath, model);
+	}
+
+	public void makeCell(mxCell cell, BasicEditNode parent, BPath parentPath, DefaultTreeModel model) {
+		LogicList logicList = null;
+		if (cell instanceof BInvoker) {
+			BInvoker invoker = (BInvoker) cell;
+			if (invoker.getInvokeChild() instanceof BVariable) {
+				logicList = new VarLogicList(invoker);
+			}
+		} else if (cell instanceof BVariable) {
+			BVariable var = (BVariable) cell;
+			// BClass bclass = var.getBClass();
+			// if (bclass.getQualifiedName().equals(List.class.getName())) {
+			// logicList = new PluralDataLogicList(parentPath, var);
+			// } else {
+			logicList = new VarLogicList(var, var);
+			// }
+			if (var.getBClass().isData()) {
+				BasicEditNode node = new BasicEditNode(project);
+				node.setUserObject(var);
+				node.setImageIcon(BeeConstants.DATA_ICON);
+				node.setDisplay(var.getName() + "編集");
+				parent.add(node);
+			}
+
+		} else if (cell instanceof BDetailNodeWrapper) {
+			BDetailNodeWrapper wrapper = (BDetailNodeWrapper) cell;
+			BasicNode node = wrapper.getNode();
+
+			this.makeCell(node, parent, parentPath, model);
+		} else if (cell instanceof BAssignment) {
+			BAssignment a = (BAssignment) cell;
+			BParameter left = a.getLeft();
+			BVariable var = BasicGenUtils.toView(left);
+			var = (BVariable) var.cloneAll();
+			var.setClass(false);
+			var.setCaller(true);
+			this.makeCell((mxCell) var, parent, parentPath, model);
+		}
+		if (logicList != null) {
+			List<BLogic> list = logicList.getList(parentPath);
+			if (list != null) {
+				for (BLogic logic : list) {
+					this.makeLogic(logic, parent, model);
+				}
+			}
+		}
+	}
+
 	public void makeLogic(BLogic logic, BasicEditNode parent, DefaultTreeModel model) {
 		BasicEditNode node = new BasicEditNode(parent.getProject());
 		node.setUserObject(logic);
@@ -680,13 +792,8 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 
 	}
 
-	protected void cellsAdded(Object[] cells) {
-		if (cells != null && cells.length == 1) {
-			if (cells[0] instanceof BNode) {
-				BNode node = (BNode) cells[0];
-				node.added(this);
-			}
-		}
+	protected boolean cellsAdded(Object[] cells) {
+		return false;
 	}
 
 	protected void cellsResized(Object[] cells) {
@@ -971,10 +1078,9 @@ public class BasicLogicSheet extends mxGraphComponent implements BEditor, BeeClo
 	@Override
 	public void makeTabPopupItems(BManager manager) {
 
-		BasicBook book = this.findBook();
 		manager.addPopupItem("詳細設計・CD生成", BeeConstants.GENERATE_CODE_ICON,
-				new CodecAction.BasicGenerate(book, project));
-		manager.addPopupItem("式样书生成", BeeConstants.PROPERTY_ICON, new CodecAction.TestAction(book, project));
+				new CodecAction.BasicGenerate(this.findBook(), project));
+
 	}
 
 	@Override

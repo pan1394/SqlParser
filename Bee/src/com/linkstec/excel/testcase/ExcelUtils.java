@@ -52,17 +52,23 @@ public class ExcelUtils {
 			}
 		}
 
+		int idx = -1;
+		if ((idx = source.indexOf(".toString")) > 0) {
+			source = source.substring(0, idx);
+		}
+		String casea = String.format("%sの設定", target);
+		String desc = String.format("変数.%sに%sが設定されること", target, source);
 		// title
 		if (!continuos) {
 			Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
-			ExcelUtils.setValue(row, p.getCol(), "以下のとおりに値を設定する");
-			ExcelUtils.setValueForCase(row, target + "の設定");
-			ExcelUtils.setValueForExpectedResult(row, target + "に" + source + "を設定する");
+			// ExcelUtils.setValue(row, p.getCol(), "以下のとおりに値を設定する");
+			ExcelUtils.setValueForCase(row, casea);
+			ExcelUtils.setValueForExpectedResult(row, desc);
 			ExcelUtils.makeBlankRow(sheet, p);
 		} else {
 			Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
-			ExcelUtils.setValueForCase(row, target + "の設定");
-			ExcelUtils.setValueForExpectedResult(row, target + "に" + source + "を設定する");
+			ExcelUtils.setValueForCase(row, casea);
+			ExcelUtils.setValueForExpectedResult(row, desc);
 		}
 		path.setContinuous(true);
 
@@ -173,6 +179,15 @@ public class ExcelUtils {
 			}
 			if (name.equals("")) {
 				return "\"\"";
+			}
+			int idx = -1;
+			if ((idx = name.indexOf("create-date")) > 0) {
+				name = name.substring(0, name.indexOf("create-date"));
+				idx = -1;
+			}
+			if ((idx = name.indexOf(".getValue")) > 0) {
+				name = name.substring(0, name.indexOf(".getValue"));
+				idx = -1;
 			}
 			return name;
 		} else if (value instanceof BExpression) {
@@ -693,12 +708,30 @@ public class ExcelUtils {
 		Row targetRow = sourceSheet.getRow(idx);
 		Cell resCell = ExcelUtils.getCell(targetRow, CaseColumn.EXPECTED_RESULT.getColumn());
 		Cell bigCell = ExcelUtils.getCell(targetRow, CaseColumn.BIG_CATEGORY.getColumn());
+		Cell litCell = ExcelUtils.getCell(targetRow, CaseColumn.LITLE_CATEGORY.getColumn());
+		Cell midCell = ExcelUtils.getCell(targetRow, CaseColumn.MID_CATEGORY.getColumn());
 		if (isEmptyCell(resCell) && !isEmptyCell(bigCell)) {
 			String big = bigCell.getStringCellValue();
 			Row nextRow = sourceSheet.getRow(idx + 1);
 			ExcelUtils.setValue(targetRow, CaseColumn.NO.getColumn(), "");
 			ExcelUtils.setValue(targetRow, CaseColumn.BIG_CATEGORY.getColumn(), "");
 			ExcelUtils.setValue(nextRow, CaseColumn.BIG_CATEGORY.getColumn(), big);
+			return true;
+		}
+		if (isEmptyCell(resCell) && !isEmptyCell(litCell)) {
+			String lit = litCell.getStringCellValue();
+			Row nextRow = sourceSheet.getRow(idx + 1);
+			ExcelUtils.setValue(targetRow, CaseColumn.NO.getColumn(), "");
+			ExcelUtils.setValue(targetRow, CaseColumn.LITLE_CATEGORY.getColumn(), "");
+			ExcelUtils.setValue(nextRow, CaseColumn.LITLE_CATEGORY.getColumn(), lit);
+			return true;
+		}
+		if (isEmptyCell(resCell) && !isEmptyCell(midCell)) {
+			String mid = midCell.getStringCellValue();
+			Row nextRow = sourceSheet.getRow(idx + 1);
+			ExcelUtils.setValue(targetRow, CaseColumn.NO.getColumn(), "");
+			ExcelUtils.setValue(targetRow, CaseColumn.MID_CATEGORY.getColumn(), "");
+			ExcelUtils.setValue(nextRow, CaseColumn.MID_CATEGORY.getColumn(), mid);
 			return true;
 		}
 		return false;
@@ -714,5 +747,27 @@ public class ExcelUtils {
 		if (c == null)
 			return true;
 		return isEmptyString(c.getStringCellValue());
+	}
+
+	// StringUtils.isEmpty(指標Cd) -> 指標Cdの値がNULLの場合
+	public static String replace(String a, String regex, String format) {
+		Pattern p = Pattern.compile(regex);
+		Matcher matcher = p.matcher(a);
+		String[] params = null;
+		if (matcher.matches()) {
+			int c = matcher.groupCount();
+			params = new String[c];
+			for (int i = 1; i < (c + 1); i++) {
+				params[i - 1] = matcher.group(i);
+			}
+			return String.format(format, params);
+		} else {
+			return a;
+		}
+	}
+
+	public static void main(String[] args) {
+		String t = replace("StringUtils.isEmpty(指標Cd)", "StringUtils.isEmpty\\((\\S+)\\)", "%sの値がNULL");
+		System.out.println(t);
 	}
 }

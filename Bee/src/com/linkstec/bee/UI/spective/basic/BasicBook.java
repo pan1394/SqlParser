@@ -30,6 +30,7 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BComponentNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.UI.spective.detail.IBeeTitleUI;
 import com.linkstec.bee.core.Application;
+import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.editor.BEditor;
 import com.linkstec.bee.core.fw.editor.BEditorModel;
@@ -225,7 +226,20 @@ public class BasicBook extends BeeTabbedPane implements IBeeTitleUI, BEditor {
 		//////////////////////// test
 	}
 
+	private boolean opening = false;
+
+	public boolean isOpening() {
+		return opening;
+	}
+
+	public void setOpening(boolean opening) {
+		this.opening = opening;
+	}
+
 	public List<BEditorModel> getALLModels() {
+		if (this.opening) {
+			return this.getBookModel().getEditors();
+		}
 		int count = this.getTabCount();
 		model.getEditors().clear();
 		for (int i = 0; i < count; i++) {
@@ -448,8 +462,18 @@ public class BasicBook extends BeeTabbedPane implements IBeeTitleUI, BEditor {
 
 	}
 
-	public void validateModels() {
+	public List<BParameter> validateModels() {
+		definedParameters.clear();
 		BasicBookModel model = this.getBookModel();
 		model.validateLayers(this);
+
+		return definedParameters;
 	}
+
+	private List<BParameter> definedParameters = new ArrayList<BParameter>();
+
+	public List<BParameter> getDefinedParamters() {
+		return definedParameters;
+	}
+
 }

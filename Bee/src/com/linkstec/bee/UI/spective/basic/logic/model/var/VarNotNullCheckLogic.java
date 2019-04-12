@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.linkstec.bee.UI.spective.basic.config.model.ModelConstants.ProcessType;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BActionModel;
+import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BParameter;
@@ -42,7 +43,7 @@ public class VarNotNullCheckLogic extends VarCheckLogic {
 	}
 
 	@Override
-	protected BExpression getExpression(ITableSql tsql) {
+	public BExpression getExpression(ITableSql tsql) {
 		if (var != null) {
 
 			if (tsql != null) {
@@ -50,8 +51,15 @@ public class VarNotNullCheckLogic extends VarCheckLogic {
 			}
 			IPatternCreator view = PatternCreatorFactory.createView();
 
+			if (var instanceof BVariable) {
+				BVariable b = (BVariable) var;
+				if (b.getLogicName().equals("stringList")) {
+					Debug.a();
+				}
+			}
+
 			BExpression ex = view.createExpression();
-			ex.setExLeft(var);
+			ex.setExLeft((BValuable) var.cloneAll());
 			ex.setExMiddle(BLogiker.NOTQUEAL);
 			ex.setExRight(CodecUtils.getNullValue());
 
@@ -94,6 +102,8 @@ public class VarNotNullCheckLogic extends VarCheckLogic {
 
 					ex.setExRight(blankCheck);
 				}
+			} else {
+				Debug.a();
 			}
 			return ex;
 		}

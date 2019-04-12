@@ -2,6 +2,8 @@ package com.linkstec.bee.UI.spective.basic.logic.model;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -10,6 +12,7 @@ import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -19,6 +22,7 @@ import com.linkstec.bee.UI.BeeConstants;
 import com.linkstec.bee.UI.BeeUIUtils;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.ValueChangeListener;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.ValueEditor;
+import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.basic.BasicGenUtils;
 import com.linkstec.bee.core.codec.util.BValueUtils;
@@ -48,7 +52,14 @@ public class InvokerLogic extends BasicLogic {
 
 	private BMethod method;
 	private BClass invokeParentBClass;
+	private BValuable invokerParent;
 	private Hashtable<String, ValueInfo> params = new Hashtable<String, ValueInfo>();
+
+	public InvokerLogic(BPath parent, ILogicCell cell, BMethod method, BValuable invokerParent) {
+		super(parent, cell);
+		this.method = method;
+		this.invokerParent = invokerParent;
+	}
 
 	public InvokerLogic(BPath parent, ILogicCell cell, BMethod method, BClass invokeParentBClass) {
 		super(parent, cell);
@@ -58,7 +69,11 @@ public class InvokerLogic extends BasicLogic {
 
 	@Override
 	public String getName() {
-		return this.method.getName() + "を呼び出す";
+		String s = this.method.getName() + "を呼び出し、処理を行う";
+		if (this.invokerParent != null) {
+			s = BValueUtils.createValuable(invokerParent, false) + "に対し、" + s;
+		}
+		return s;
 	}
 
 	@Override
@@ -127,7 +142,8 @@ public class InvokerLogic extends BasicLogic {
 				BAssignment assign = (BAssignment) values.get(n);
 				if (assign == null) {
 					BClass bclass = method.getParameter().get(n).getBClass();
-					assign = BasicGenUtils.createInstance(bclass);
+					assign = BasicGenUtils.createInstance(bclass,
+							Application.getInstance().getBasicSpective().getSelection().getProvider());
 
 					BNote note = view.createComment();
 					note.setNote("共通関数「" + method.getName() + "」のパラメータを作成する");
@@ -158,13 +174,16 @@ public class InvokerLogic extends BasicLogic {
 			}
 		}
 
-		Enumeration<Integer> valueNumers = values.keys();
+		// Enumeration<Integer> valueNumers = values.keys();
 		List<BObject> orderedValue = new ArrayList<BObject>();
-		while (valueNumers.hasMoreElements()) {
-			int index = valueNumers.nextElement();
-			BObject object = values.get(index);
-			orderedValue.add(index, object);
+		for (int i = 0; i < values.size(); i++) {
+			orderedValue.add(values.get(i));
 		}
+		// while (valueNumers.hasMoreElements()) {
+		// int index = valueNumers.nextElement();
+		// BObject object = values.get(index);
+		// orderedValue.add(index, object);
+		// }
 		for (BObject obj : orderedValue) {
 			if (obj instanceof BValuable) {
 				BValuable bv = (BValuable) obj;
@@ -186,7 +205,11 @@ public class InvokerLogic extends BasicLogic {
 		// invoker
 		BInvoker invoker = view.createMethodInvoker();
 
-		BValuable parent = provider.getInvokeParent(invokeParentBClass);
+		BValuable parent = this.invokerParent;
+		if (invokeParentBClass != null) {
+			parent = provider.getInvokeParent(invokeParentBClass);
+		}
+
 		if (parent != null) {
 			invoker.setInvokeParent(parent);
 			invoker.setInvokeChild(method);
@@ -198,7 +221,8 @@ public class InvokerLogic extends BasicLogic {
 				units.addAll(punits);
 			}
 
-			BAssignment assign = BasicGenUtils.createInstanceWidthValue(method.getReturn().getBClass(), invoker);
+			BAssignment assign = BasicGenUtils.createInstanceWidthValue(method.getReturn().getBClass(), invoker,
+					provider);
 			assign.getLeft().setName(method.getName() + "の処理結果");
 
 			this.addMark(assign.getLeft());
@@ -275,20 +299,59 @@ public class InvokerLogic extends BasicLogic {
 
 			index--;
 
-			ValueEditor editor = new ValueEditor(parentNumber, index, null);
-			if (value != null) {
-				editor.setValue(value.getValue());
+			Object op = param.getUserAttribute("PARAMETER_OPTIONS");
+			if (op instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<BValuable> options = (List<BValuable>) op;
+				JComboBox<BValuable> box = new JComboBox<BValuable>();
+				box.addItemListener(new ItemListener() {
 
-				if (!value.getValue().getBClass().getLogicName().equals(BClass.NULL)) {
-					editor.setFireEvent(false);
-					editor.setText(BValueUtils.createValuable(value.getValue(), false));
-					editor.setFireEvent(true);
+					@Override
+					public void itemStateChanged(ItemEvent e) {
+						BValuable var = (BValuable) e.getItem();
+						ValueInfo info = new ValueInfo();
+						info.setParam(param);
+						info.setValue(var);
+						params.put(storedName, info);
+					}
+
+				});
+
+				boolean first = true;
+				for (BValuable var : options) {
+					if (first && value == null) {
+						first = false;
+						ValueInfo info = new ValueInfo();
+						info.setParam(param);
+						info.setValue(var);
+						this.params.put(storedName, info);
+					}
+					box.addItem(var);
+					if (value != null) {
+						BValuable v = (BValuable) value.getValue();
+						if (v.toString().equals(var.toString())) {
+							box.setSelectedItem(var);
+						}
+					}
 				}
+				this.add(box);
+			} else {
+				ValueEditor editor = new ValueEditor(parentNumber, index, null);
+				if (value != null) {
 
+					editor.setValue(value.getValue());
+
+					if (!value.getValue().getBClass().getLogicName().equals(BClass.NULL)) {
+						editor.setFireEvent(false);
+						editor.setText(BValueUtils.createValuable(value.getValue(), false));
+						editor.setFireEvent(true);
+					}
+
+				}
+				this.add(editor);
+				editor.setListener(this);
 			}
-			this.add(editor);
 
-			editor.setListener(this);
 		}
 
 		@Override

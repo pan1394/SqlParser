@@ -34,7 +34,7 @@ public class BTableConnectWhereNode extends BTableWhereNode {
 		List<BEditorModel> models = Application.getInstance().getBasicSpective().getSelection().getBookModel()
 				.getEditors();
 
-		String logicName = target.getModel(models).getLogicName();
+		String logicName = target.getModel(models).getName();
 		tempName = logicName;
 		if (type == TYPE_INNER) {
 			this.setTitle("INNER JOIN結合条件(" + logicName + ")");
@@ -105,6 +105,16 @@ public class BTableConnectWhereNode extends BTableWhereNode {
 			s = s + " ";
 		}
 
+		String asLogic = this.connnectTarget.getAsParamLogicName();
+		if (asLogic != null) {
+			s = s + " AS " + asLogic + " ";
+		} else {
+			// BVariable param = this.connnectTarget.getModel(tsql.getEditors());
+			// if (param != null) {
+			// s = s + " " + param.getLogicName() + " ";
+			// }
+		}
+
 		s = s + "ON";
 
 		List<BTableValueNode> list = this.getRecords();
@@ -146,6 +156,17 @@ public class BTableConnectWhereNode extends BTableWhereNode {
 			s = s + " ";
 		}
 		s = s + this.connnectTarget.getSQLExp(tsql);
+
+		String asName = this.connnectTarget.getAsParamName();
+		if (asName != null) {
+			s = s + " AS " + asName;
+		} else {
+			// BVariable param = this.connnectTarget.getModel(tsql.getEditors());
+			// if (param != null) {
+			// s = s + " " + param.getName();
+			// }
+		}
+
 		if (type == TYPE_INNER) {
 			s = s + "    ----INNER JOIN";
 		} else if (type == TYPE_LEFT) {

@@ -37,8 +37,10 @@ import com.linkstec.bee.UI.look.menu.BeeMenu;
 import com.linkstec.bee.UI.look.menu.BeeMenuItem;
 import com.linkstec.bee.UI.spective.BeeSpective;
 import com.linkstec.bee.UI.spective.detail.BeeGraphSheet;
+import com.linkstec.bee.UI.spective.detail.action.BeeActions;
 import com.linkstec.bee.core.Application;
 import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxEventObject;
 import com.mxgraph.util.mxEventSource.mxIEventListener;
 import com.mxgraph.util.mxResources;
@@ -173,6 +175,9 @@ public class EditorToolBar extends JToolBar implements MouseMotionListener, Mous
 				}
 			}
 		});
+
+		add(BeeActions.bind("Fill", new BEditorActions.ColorAction("Fill", mxConstants.STYLE_FILLCOLOR),
+				"/com/mxgraph/examples/swing/images/fillcolor.gif"));
 
 		this.initButtons();
 		this.addMouseMotionListener(this);

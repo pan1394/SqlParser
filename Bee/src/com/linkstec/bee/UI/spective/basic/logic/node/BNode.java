@@ -157,7 +157,7 @@ public class BNode extends mxCell implements Serializable, IBasicCellList {
 
 	}
 
-	public void doLayout() {
+	public void doLayout(BasicLogicSheet sheet) {
 
 	}
 
@@ -173,11 +173,11 @@ public class BNode extends mxCell implements Serializable, IBasicCellList {
 		this.editable = editable;
 	}
 
-	public void paintBefore(Graphics g, mxCellState state) {
+	public void paintBefore(Graphics g, mxCellState state, double scale) {
 
 	}
 
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 
 	}
 
@@ -262,4 +262,10 @@ public class BNode extends mxCell implements Serializable, IBasicCellList {
 	public void onMenuSelected(BasicCellListeItem item) {
 
 	}
+
+	@Override
+	public void removeFromParent() {
+		super.removeFromParent();
+	}
+
 }

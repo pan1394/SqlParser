@@ -16,11 +16,11 @@ import com.linkstec.bee.UI.spective.basic.logic.edit.BCoverSheet;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPatternModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BTableModel;
 import com.linkstec.bee.UI.spective.basic.logic.model.BasicNaming;
+import com.linkstec.bee.UI.spective.basic.logic.model.NewLayerClassLogic;
 import com.linkstec.bee.UI.spective.basic.logic.node.BActionNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BActionPropertyNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.core.Application;
-import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.basic.BasicGenUtils;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
@@ -124,6 +124,11 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 							List<BClass> clss = BasicGenUtils.createLayer(p.getLogic().getPath(), sheet.getProject());
 							BActionModel action = (BActionModel) p.getLogic().getPath().getAction();
 
+							NewLayerClassLogic logic = p.getLogic();
+
+							book.getDefinedParamters().addAll(logic.getOutputs());
+							book.getDefinedParamters().addAll(logic.getParameters());
+
 							BLogicProvider provider = p.getLogic().getPath().getProvider();
 							if (provider == null) {
 								continue;
@@ -168,9 +173,6 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 		}
 		for (BClass bclass : list) {
 
-			if (bclass == null) {
-				Debug.a();
-			}
 			if (bclass.isData()) {
 				boolean contained = false;
 				for (BClass b : datas) {
@@ -272,6 +274,7 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 		sub.setLogicName(file.getParentFile().getParentFile().getName());
 		Application.test = false;
 		BasicBook book = new BasicBook(this, project, space, sub);
+		book.setOpening(true);
 		List<BEditorModel> list = this.getEditors();
 		int i = 0;
 
@@ -295,6 +298,7 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 		// }).start();
 
 		//////////////////////////////////
+		book.setOpening(false);
 		return book;
 
 	}
@@ -358,7 +362,11 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 	public Hashtable<String, ITableSqlInfo> getSqlInfos(BProject project, BLogicProvider provider) {
 		Hashtable<String, ITableSqlInfo> infos = new Hashtable<String, ITableSqlInfo>();
 		List<BEditorModel> list = this.getEditors();
-		for (BEditorModel editor : list) {
+
+		// for java.util.ConcurrentModificationException
+		List<BEditorModel> alist = new ArrayList<BEditorModel>();
+		alist.addAll(list);
+		for (BEditorModel editor : alist) {
 			if (editor instanceof BPatternModel) {
 				BPatternModel p = (BPatternModel) editor;
 				BActionModel action = (BActionModel) p.getActionPath().getSelfAction();
@@ -369,8 +377,8 @@ public class BasicBookModel implements Serializable, BEditorModel, BModule {
 
 					BSQLModel sql = (BSQLModel) editor;
 					ITableSqlInfo info = sql.getSqlInfo(this, provider);
-					BClass bclass = BasicGenUtils.createClass(action, project);
-					infos.put(bclass.getQualifiedName(), info);
+					// BClass bclass = BasicGenUtils.createClass(action, project);
+					infos.put(p.getActionPath().getUniqueKey() + "", info);
 				}
 			}
 		}

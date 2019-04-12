@@ -18,6 +18,8 @@ public interface ITableSql extends Serializable {
 
 	public List<BInvoker> getInvokers();
 
+	public List<BInvoker> getSelectInfos();
+
 	public void setFormat(boolean format);
 
 	public boolean isFormat();

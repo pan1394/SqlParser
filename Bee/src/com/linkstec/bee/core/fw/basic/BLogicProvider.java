@@ -8,6 +8,7 @@ import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BModule;
 import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.BValuable;
+import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IPatternCreator;
 import com.linkstec.bee.core.fw.editor.BProject;
 import com.linkstec.bee.core.fw.logic.BAssignment;
@@ -35,12 +36,24 @@ public abstract class BLogicProvider implements Serializable {
 		return this.properties;
 	}
 
+	public BInvoker getDataCopyLogic() {
+		return null;
+	}
+
 	public String getReturnValue(BClass bclass, int layer, String componentLogicName, String subSystemLogicNamne) {
 		return null;
 	}
 
 	public boolean onDataTransfer(BInvoker setter, BValuable parameter) {
 		return false;
+	}
+
+	public String getVariableName(BVariable var, Object otherInfo) {
+		return null;
+	}
+
+	public BValuable getConstantsName(BValuable parameter) {
+		return null;
 	}
 
 	public BValuable getInvokeParent(BClass bclass) {

@@ -14,6 +14,8 @@ import com.linkstec.bee.UI.spective.detail.edit.DropAction;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
+import com.linkstec.bee.core.fw.BParameter;
+import com.linkstec.bee.core.fw.BType;
 import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IUnit;
@@ -192,6 +194,18 @@ public class BLockNode extends BasicNode implements Serializable, BLogicBody {
 			value = tf;
 		} else if (source instanceof BInvoker) {
 			value = (BInvoker) source;
+			BInvoker bin = (BInvoker) source;
+			BValuable child = bin.getInvokeChild();
+			if (child instanceof BParameter) {
+				AssignmentNode assign = new AssignmentNode();
+
+				BParameter var = (BParameter) child;
+				BParameter invokeChild = (BParameter) var.cloneAll();
+
+				assign.setLeft(invokeChild);
+				assign.setRight(value, null);
+				return assign;
+			}
 		}
 
 		if (value != null) {
@@ -201,8 +215,21 @@ public class BLockNode extends BasicNode implements Serializable, BLogicBody {
 				ParameterNode node = new ParameterNode();
 
 				node.setBClass(bclass.cloneAll());
-				node.setLogicName("m" + bclass.getLogicName().toLowerCase());
-				node.setName(bclass.getName().toLowerCase());
+				String logicName = "m" + bclass.getLogicName().toLowerCase();
+				String name = bclass.getName();
+				if (bclass.getQualifiedName().equals(List.class.getName())) {
+					List<BType> types = bclass.getParameterizedTypes();
+					for (BType type : types) {
+						if (type instanceof BClass) {
+							BClass b = (BClass) type;
+							logicName = "m" + b.getLogicName() + "List";
+							name = b.getName() + "リスト";
+						}
+					}
+					// name = name + "リスト";
+				}
+				node.setLogicName(logicName);
+				node.setName(name);
 				assign.setLeft(node);
 				assign.setRight(value, null);
 				return assign;

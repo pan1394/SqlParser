@@ -23,7 +23,8 @@ public class BStart extends BNode {
 	public BStart(String name, String logicName) {
 		int width = 200;
 		this.setVertex(true);
-		this.setStyle("rounded=1;strokeWidth=0.5;strokeColor=gray;align=center;fillColor=" + BeeConstants.ELEGANT_BRIGHTER_GREEN_COLOR);
+		this.setStyle("rounded=1;strokeWidth=0.5;strokeColor=gray;align=center;fillColor="
+				+ BeeConstants.ELEGANT_BRIGHTER_GREEN_COLOR);
 		mxGeometry geo = this.getGeometry();
 		geo.setWidth(width);
 		geo.setHeight(60);
@@ -107,7 +108,7 @@ public class BStart extends BNode {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 
 		mxRectangle box = state.getBoundingBox();
 		Rectangle rect = box.getRectangle();

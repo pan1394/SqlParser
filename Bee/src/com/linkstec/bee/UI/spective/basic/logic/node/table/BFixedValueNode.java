@@ -61,5 +61,4 @@ public class BFixedValueNode extends BTableValueNode implements ILogicCell {
 		sql.getInfo().setFixedValue();
 		return (String) this.getValue();
 	}
-
 }

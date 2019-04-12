@@ -38,11 +38,22 @@ public class BLogicUtils {
 						}
 					}
 				}
+				if (value instanceof mxICell) {
+					mxICell mc = (mxICell) value;
+					replaceValue(mc, n);
+				}
 			} else if (child instanceof LinkNode) {
 				LinkNode node = (LinkNode) child;
 				BasicNode basic = node.getLinkNode();
 				replaceValue(basic, n);
+			} else {
+				Object value = child.getValue();
+				if (value instanceof mxICell) {
+					mxICell mc = (mxICell) value;
+					replaceValue(mc, n);
+				}
 			}
+
 			replaceValue(child, n);
 		}
 	}
@@ -62,6 +73,8 @@ public class BLogicUtils {
 					Debug.d();
 				}
 			}
+		} else {
+			Debug.a();
 		}
 
 	}

@@ -124,10 +124,9 @@ public class BasicCellEditor extends mxCellEditor implements KeyListener, Serial
 
 		if (node instanceof IBasicCellList) {
 			IBasicCellList list = (IBasicCellList) node;
-			List<BasicCellListeItem> values = list.getListItems(null, sheet);
+			String text = this.textArea.getText().trim();
+			List<BasicCellListeItem> values = list.getListItems(text, sheet);
 			if (values != null) {
-
-				String text = this.textArea.getText().trim();
 
 				// if (text.equals("")) {
 				// this.hint.setVisible(false);

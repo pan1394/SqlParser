@@ -425,9 +425,8 @@ public class BeeDataSheet extends BeeScrollPane implements Printable, IBeeTitleU
 
 	@Override
 	public void makeTabPopupItems(BManager manager) {
-		manager.addPopupItem("ソースへ変換", BeeConstants.GENERATE_CODE_ICON,
+		manager.addPopupItem("ソースへ変換dasdfafd", BeeConstants.GENERATE_CODE_ICON,
 				new CodecAction.GenerateSourceSingle(this.file, this.project));
-
 	}
 
 	@Override

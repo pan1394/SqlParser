@@ -2,11 +2,8 @@ package com.linkstec.bee.UI.spective.basic.logic.node.table;
 
 import java.util.List;
 
-import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.ITableSql;
-import com.mxgraph.model.mxGeometry;
-import com.mxgraph.model.mxICell;
 
 public class BTableSortNode extends BTableRecordListNode {
 
@@ -18,32 +15,6 @@ public class BTableSortNode extends BTableRecordListNode {
 	public BTableSortNode(BPath parent) {
 		super(parent);
 		this.setTitle("ソート項目");
-	}
-
-	@Override
-	public void layout(BasicLogicSheet sheet) {
-		int count = this.getChildCount();
-
-		double y = space + 40;
-		double x = 12;
-		for (int i = 0; i < count; i++) {
-			mxICell child = this.getChildAt(i);
-			if (child instanceof BTableRecordNode) {
-				mxGeometry geo = child.getGeometry();
-
-				if (x + geo.getWidth() > this.getGeometry().getWidth() - space) {
-					x = 12;
-					y = y + geo.getHeight() + space;
-				}
-				geo.setX(x);
-				geo.setY(y);
-
-				x = x + geo.getWidth() + space;
-
-			}
-		}
-
-		this.fitHeight();
 	}
 
 	@Override

@@ -1,7 +1,10 @@
 package com.linkstec.bee.UI.spective.basic.logic.node.table;
 
+import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.SQLMakeUtils;
 import com.linkstec.bee.core.fw.BClass;
+import com.linkstec.bee.core.fw.BParameter;
+import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.basic.ITableSql;
 import com.linkstec.bee.core.fw.logic.BInvoker;
@@ -29,7 +32,7 @@ public class BTableRecordNode extends BTableValueNode {
 	}
 
 	@Override
-	public void doLayout() {
+	public void doLayout(BasicLogicSheet sheet) {
 
 	}
 
@@ -65,5 +68,20 @@ public class BTableRecordNode extends BTableValueNode {
 	@Override
 	public String getSQLExp(ITableSql tsql) {
 		return SQLMakeUtils.getTableReferenceExp(invoker);
+	}
+
+	@Override
+	public BVariable getListTargetVar() {
+		return (BVariable) this.invoker.getInvokeParent();
+	}
+
+	@Override
+	public boolean isEditable() {
+		return true;
+	}
+
+	@Override
+	public void onListTargetChange(BParameter var) {
+		this.invoker.setInvokeChild((BValuable) var.cloneAll());
 	}
 }

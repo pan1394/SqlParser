@@ -76,6 +76,11 @@ public class ListAddLogic extends BasicLogic {
 		IPatternCreator view = PatternCreatorFactory.createView();
 		BInvoker invoker = view.createMethodInvoker();
 		invoker.setInvokeParent(this.target);
+		if (this.target instanceof BVariable) {
+			BVariable var = (BVariable) this.target;
+			var.setClass(false);
+			var.setCaller(true);
+		}
 		BMethod method = view.createMethod();
 		method.setLogicName("add");
 		method.setName("値追加");

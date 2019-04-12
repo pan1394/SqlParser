@@ -41,6 +41,10 @@ import com.sun.codemodel.JType;
 public class JavaGenUnit implements BJavaGenIF {
 
 	private static String toGen(JDeclaration generable) {
+		if (generable == null) {
+			// TODO
+			return "";
+		}
 		try {
 
 			ByteArrayOutputStream output = new ByteArrayOutputStream();

@@ -351,12 +351,22 @@ public class JavaGen {
 
 	public void generateAnnotation(BObject object, JCodeModel cm, JAnnotatable annotable, JDefinedClass cls)
 			throws ClassNotFoundException, JClassAlreadyExistsException, IOException, BeeClassExistsException {
+		if (annotable == null) {
+			Debug.a();
+			// TODO
+			return;
+		}
 		log("generateAnnotation");
 		if (object instanceof BAnnotable) {
 			BAnnotable annble = (BAnnotable) object;
 			List<BAnnotation> annos = annble.getAnnotations();
 			if (annos != null) {
 				for (BAnnotation anno : annos) {
+					if (anno == null) {
+						// TODO
+						Debug.a();
+						return;
+					}
 					JAnnotationUse use = annotable.annotate(this.getType(cm, anno.getBClass(), cls).boxify());
 					this.generateAnnotationUnit(cm, anno, cls, use);
 				}
@@ -883,7 +893,7 @@ public class JavaGen {
 			boolean isStatic = false;
 			if (parent instanceof BVariable) {
 				BVariable var = (BVariable) parent;
-				if (var.isClass()) {
+				if (var.isClass() && !var.isCaller()) {
 					isStatic = true;
 				}
 			}
@@ -1000,6 +1010,7 @@ public class JavaGen {
 			}
 
 		}
+
 		if (parameters != null)
 
 		{
@@ -1224,8 +1235,14 @@ public class JavaGen {
 						var = block.decl(left.getModifier(), jclass, name.getLogicName(),
 								generateObject(cm, value, cls));
 					} else {
-						var = block.decl(left.getModifier(), jclass, name.getLogicName(),
-								generateObject(cm, value, cls));
+						int modifer = left.getModifier();
+						// TODO TODO
+						if (modifer != 0) {
+							// Debug.a();
+							modifer = 0;
+						}
+
+						var = block.decl(modifer, jclass, name.getLogicName(), generateObject(cm, value, cls));
 					}
 				}
 			}
@@ -1258,8 +1275,20 @@ public class JavaGen {
 			return JExpr.assignPlus(target, JExpr._null(), logiker);
 
 		} else {
-			JAssignmentTarget target = (JAssignmentTarget) this.generateObject(cm, left, cls);
-			return JExpr.assignPlus(target, generateObject(cm, value, cls), logiker);
+			JExpression obj = this.generateObject(cm, left, cls);
+			if (obj instanceof JAssignmentTarget) {
+				JAssignmentTarget target = (JAssignmentTarget) obj;
+				return JExpr.assignPlus(target, generateObject(cm, value, cls), logiker);
+			} else if (obj instanceof JInvocation) {
+				JExpression v = generateObject(cm, value, cls);
+
+				JInvocation anno = (JInvocation) obj;
+				anno.arg(v);
+
+				return anno;
+			} else {
+				return null;
+			}
 
 		}
 
@@ -1306,15 +1335,23 @@ public class JavaGen {
 			name.setLogicName(logicNm);
 		}
 
-		JFieldVar f;
+		JFieldVar f = null;
 		if (value == null) {
 			f = cls.field(name.getModifier(), jtype, name.getLogicName());
 		} else {
-			f = cls.field(name.getModifier(), jtype, name.getLogicName(), generateObject(cm, value, cls));
+			try {
+				f = cls.field(name.getModifier(), jtype, name.getLogicName(), generateObject(cm, value, cls));
+
+			} catch (Exception e) {
+				return null;
+				// trying to create the same field twice
+			}
 		}
 
 		this.generateAnnotation(variable, cm, f, cls);
-		f.javadoc().add(name.getName());
+		if (f != null && name != null) {
+			f.javadoc().add(name.getName());
+		}
 
 		return f;
 	}

@@ -71,6 +71,12 @@ public class BasicGraph extends mxGraph {
 	}
 
 	@Override
+	public void cellsRemoved(Object[] cells) {
+		// TODO Auto-generated method stub
+		super.cellsRemoved(cells);
+	}
+
+	@Override
 	public boolean isTerminalPointMovable(Object cell, boolean source) {
 		return true;// super.isTerminalPointMovable(cell, source);
 	}
@@ -149,7 +155,7 @@ public class BasicGraph extends mxGraph {
 			BNode node = (BNode) cell;
 			return node.isResizable();
 		}
-		return super.isCellResizable(cell);
+		return true;
 	}
 
 	@Override
@@ -165,7 +171,7 @@ public class BasicGraph extends mxGraph {
 			BNode node = (BNode) cell;
 			return node.isSelectable();
 		}
-		return super.isCellSelectable(cell);
+		return true;
 	}
 
 	@Override
@@ -174,7 +180,7 @@ public class BasicGraph extends mxGraph {
 			BNode node = (BNode) cell;
 			return node.isDeletable();
 		}
-		return super.isCellDeletable(cell);
+		return true;
 	}
 
 	@Override
@@ -183,7 +189,7 @@ public class BasicGraph extends mxGraph {
 			BNode node = (BNode) cell;
 			return node.isMoveable();
 		}
-		return super.isCellMovable(cell);
+		return true;
 	}
 
 }

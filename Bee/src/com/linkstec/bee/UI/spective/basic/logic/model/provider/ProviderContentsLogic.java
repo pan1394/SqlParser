@@ -1,6 +1,7 @@
 package com.linkstec.bee.UI.spective.basic.logic.model.provider;
 
 import java.awt.FlowLayout;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -53,6 +54,7 @@ public class ProviderContentsLogic extends BasicLogic {
 
 	// for message editor
 	private LogicMenuMessage menuMessage;
+	private BVariable param;
 	private Hashtable<Integer, BValuable> values = new Hashtable<Integer, BValuable>();
 
 	public ProviderContentsLogic(BPath parent, BUtilMethod util) {
@@ -126,10 +128,22 @@ public class ProviderContentsLogic extends BasicLogic {
 				BParameter first = parameters.get(0);
 				BParameter second = parameters.get(1);
 
-				BVariable param = view.createVariable();
-				BClass bclass = CodecUtils.BString().cloneAll();
-				bclass.setArrayPressentClass(CodecUtils.BString());
-				param.setBClass(bclass);
+				if (this.param == null) {
+					param = view.createVariable();
+					BClass bclass = CodecUtils.BString().cloneAll();
+					bclass.setArrayPressentClass(CodecUtils.BString());
+					param.setBClass(bclass);
+				} else {
+					param = (BVariable) param.cloneAll();
+					Enumeration<Integer> keys = this.values.keys();
+					while (keys.hasMoreElements()) {
+						int key = keys.nextElement();
+						BValuable value = values.get(key);
+						param.replaceInitValue(key, value);
+					}
+					setValue(second, param);
+				}
+				List<BValuable> inits = param.getInitValues();
 
 				if (first.getName().equals("{messageID}") && second.getName().equals("{messageParameter}")) {
 					message = true;
@@ -158,6 +172,7 @@ public class ProviderContentsLogic extends BasicLogic {
 							values.put(index, value);
 
 							setValue(first, idValue);
+
 							setValue(second, param);
 
 						}
@@ -176,7 +191,12 @@ public class ProviderContentsLogic extends BasicLogic {
 								var.setBClass(CodecUtils.BString());
 								var.setLogicName("\"TODO\"");
 								var.setName("\"TODO\"");
-								param.addInitValue(var);
+								BValuable defined = values.get(i);
+								if (defined == null) {
+									param.addInitValue(var);
+								} else {
+									param.addInitValue(defined);
+								}
 								BPath path = getPath();
 								if (path.getParent() == null) {
 									path.setParent(Application.getInstance().getBasicSpective().getSelection()

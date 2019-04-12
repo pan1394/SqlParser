@@ -29,8 +29,10 @@ public class ModifierNode extends mxCell implements Menuable {
 	private boolean connected = false;
 
 	private static int VAR = JMod.FINAL;
-	private static int FIELD = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.STATIC | JMod.FINAL | JMod.TRANSIENT | JMod.VOLATILE);
-	private static int METHOD = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL | JMod.ABSTRACT | JMod.STATIC | JMod.NATIVE | JMod.SYNCHRONIZED);
+	private static int FIELD = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.STATIC | JMod.FINAL | JMod.TRANSIENT
+			| JMod.VOLATILE);
+	private static int METHOD = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL | JMod.ABSTRACT | JMod.STATIC
+			| JMod.NATIVE | JMod.SYNCHRONIZED);
 	private static int CLASS = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.STATIC | JMod.FINAL | JMod.ABSTRACT);
 	private static int INTERFACE = JMod.PUBLIC;
 
@@ -43,7 +45,8 @@ public class ModifierNode extends mxCell implements Menuable {
 		String id = BeeUIUtils.createID();
 		this.setValue("");
 		this.setGeometry(g);
-		this.setStyle("name=indicator;id=" + id + ";shape=actor;strokeColor=gray;verticalAlign=bottom;align=center;fontSize=8;portConstraint=east");
+		this.setStyle("name=indicator;id=" + id
+				+ ";shape=actor;strokeColor=gray;verticalAlign=bottom;align=center;fontSize=8;portConstraint=east");
 		this.setVertex(true);
 		this.setId(id);
 
@@ -63,7 +66,9 @@ public class ModifierNode extends mxCell implements Menuable {
 			}
 		} else if (node instanceof AssignmentNode) {
 			AssignmentNode p = (AssignmentNode) parent;
-			mod = p.getLeft().getModifier();
+			if (p.getLeft() != null) {
+				mod = p.getLeft().getModifier();
+			}
 			type = FIELD;
 		} else if (node instanceof BConstructor) {
 			type = METHOD;

@@ -22,6 +22,10 @@ public class BValueUtils {
 			return null;
 		}
 
+		if (value.getUserAttribute("DISPLY_NAME") != null) {
+			return (String) value.getUserAttribute("DISPLY_NAME");
+		}
+
 		if (value instanceof BVariable) {
 
 			BVariable var = (BVariable) value;
@@ -130,10 +134,12 @@ public class BValueUtils {
 	}
 
 	public static String createConstructor(BValuable value, boolean logical) {
-		IUnit unit = (IUnit) value;
-		if (unit.getNumber() != null) {
+		if (value instanceof IUnit) {
+			IUnit unit = (IUnit) value;
+			if (unit.getNumber() != null) {
 
-			return unit.getNumber().getString();
+				return unit.getNumber().getString();
+			}
 		}
 
 		BConstructor c = (BConstructor) value;
@@ -169,14 +175,14 @@ public class BValueUtils {
 			if (logical) {
 				s = " == ";
 			} else {
-				s = " is ";
+				s = " = ";
 			}
 		} else if (middle.getLogicName().equals(BLogiker.NOTQUEAL.getLogicName())) {
 			s = " is not ";
 			if (logical) {
 				s = " != ";
 			} else {
-				s = " is not ";
+				s = " <> ";
 			}
 		} else if (middle.getLogicName().equals(BLogiker.LOGICAND.getLogicName())) {
 			if (logical) {
@@ -193,7 +199,9 @@ public class BValueUtils {
 		} else if (middle.getLogicName().equals(BLogiker.INSTANCEOF.getLogicName())) {
 			s = "　instanceof ";
 		}
-
+		if (expression.getUserAttribute("PARENTIZED") != null) {
+			return "(" + sl + s + sr + ")";
+		}
 		return sl + s + sr;
 	}
 

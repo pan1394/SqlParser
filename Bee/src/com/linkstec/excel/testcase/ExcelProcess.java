@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -94,22 +95,54 @@ public class ExcelProcess {
 		Workbook book = sheet.getWorkbook();
 		this.createClass(logic, sheet, p);
 
-		List<String> jclIds = ExcelTemplate.JCLService.list();
-		int i = 0;
-		for (String jclId : jclIds) {
-			clone(logic, initRow, p, jclId, (++i));
-		}
+		clone2(logic, initRow, p, logic.getName(), "");
+//		List<String> jclIds = ExcelTemplate.JCLService.list();
+//		int i = 0;
+//		for (String jclId : jclIds) {
+//			clone(logic, initRow, p, jclId, (++i));
+//		}
 		book.removeSheetAt(book.getSheetIndex(sheet));
+	}
+
+	private void clone2(BClass logic, int initRow, ExcelLogicProgress p, String name, String append) {
+		Workbook book = sheet.getWorkbook();
+		// serviceName
+		String tname = name;
+		if (name.length() > 20) {
+			tname = name.substring(5, name.length() - 12);
+		}
+		Sheet targetSheet = ExcelUtils.copySheet(book, sheet, initRow + 1, p.getRow(), tname, append);
+
+		// serviceId
+		Row serviceRow = ExcelUtils.getRow(targetSheet, initRow);
+		Row titleRow = ExcelUtils.getRow(targetSheet, 2);
+		ExcelUtils.setValueForServiceId(serviceRow, "なし");
+		// serviceName
+		ExcelUtils.setValueForBigCategory(serviceRow, name);
+		ExcelUtils.setValue(titleRow, 8, name);
+		ExcelUtils.setValue(titleRow, 9, name);
+		ExcelUtils.setValue(titleRow, 11, "tester");
+
+		CellRangeAddress region0 = new CellRangeAddress(initRow, initRow, 3, ExcelLogicProgress.maxWith);
+		ExcelUtils.initRowsStyleForRegionCells(region0, targetSheet, style);
+		CellRangeAddress region = new CellRangeAddress(initRow + 1, targetSheet.getLastRowNum(), 2,
+				ExcelLogicProgress.maxWith);
+		ExcelUtils.borderForRegionCells(region, targetSheet, style);
+		CellRangeAddress region2 = new CellRangeAddress(initRow, targetSheet.getLastRowNum(), 1, 1);
+		ExcelUtils.borderWithCenterAlignmentForRegionCells(region2, targetSheet, style);
+
+		book.setPrintArea(book.getSheetIndex(targetSheet), 1, ExcelLogicProgress.maxWith, 1,
+				targetSheet.getLastRowNum());
 	}
 
 	private void clone(BClass logic, int initRow, ExcelLogicProgress p, String jclId, int count) {
 		Workbook book = sheet.getWorkbook();
 		// serviceName
 		String classA = logic.getLogicName();
-		String serviceName = classA.substring(0, classA.length() - 4);
+		String serviceName = classA.substring(0, classA.length() - 10);// -4;
 		// deviceName
 		String name = logic.getName();
-		int index = name.indexOf("JobService");
+		int index = name.indexOf(Constants.ServiceName);
 		if (index > 0) {
 			name = name.substring(0, index);
 		}
@@ -190,6 +223,8 @@ public class ExcelProcess {
 		// BProcess.go();
 
 		if (unit instanceof BNote) {
+			Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+			ExcelUtils.setValueForBigCategory(row, ((BNote) unit).getNote());
 			return true;
 		}
 
@@ -352,13 +387,12 @@ public class ExcelProcess {
 		BValuable obj = returnUnit.getReturnValue();
 		String s = this.createValuable(obj, p, true);
 		Row r = ExcelUtils.makeRowWithRowNum(sheet, p);
-		ExcelUtils.setValueForCase(r, "戻り値の設定");
-		ExcelUtils.setValueForExpectedResult(r, s);
+		ExcelUtils.setValueForCase(r, "戻り値返却");
+		ExcelUtils.setValueForExpectedResult(r, String.format("戻り値:%s", s));
 	}
 
 	private void createAssign(BAssign a, Sheet sheet, ExcelLogicProgress p) {
 		log("createAssign:" + a.toString());
-
 		int col = p.getCol();
 
 		BValuable right = a.getRight();
@@ -369,47 +403,74 @@ public class ExcelProcess {
 			boolean createInvoker = false;
 			if (value instanceof BInvoker) {
 				BInvoker in = (BInvoker) value;
-				BValuable v = in.getInvokeChild();
-				if (!(v instanceof BConstructor)) {
+				BValuable cv = in.getInvokeChild();
+				BValuable pv = in.getInvokeParent();
+				List<BValuable> prms = in.getParameters();
+				createInvoker = !(cv instanceof BConstructor);
+				boolean getter = createInvoker && prms.size() == 0;
+				if (getter) {
+					String name = left.getName();
+					String init = String.format("%sの初期化", name);
+					String casea = String.format("変数.%sの設定", name);
+					String expected = String.format("変数.%sに%sが設定されること", name, String.format("%s.%s", pv, cv));
+					Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+					ExcelUtils.setValueForLitCategory(row, init);
+					ExcelUtils.setValueForCase(row, casea);
+					ExcelUtils.setValueForExpectedResult(row, expected);
+				} else if (createInvoker) {
 					this.createInvoker(in, sheet, p, true, left);
-					createInvoker = true;
+				} else {// initiliazer
+					String init = left.getLogicName() + "の宣言";
+					String casea = left.getLogicName() + "を初期化";
+					String expected = "インスタンス生成がされ、処理継続されること。";
+					Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+					ExcelUtils.setValueForLitCategory(row, casea);
+					ExcelUtils.setValueForCase(row, init);
+					ExcelUtils.setValueForExpectedResult(row, expected);
 				}
-			}
-
-			if (!createInvoker) {
-				String name = left.getLogicName() + "の宣言";
-				String init = left.getLogicName() + "の初期化";
-				// Row row = ExcelUtils.getRow(sheet, p.getRow());
+			} else {
+				String name = left.getLogicName();
+				String casea = String.format("変数.%sの設定", name);
+				System.out.println(casea);
+				String express = this.createValuable(right, p, false);
+				String expected = String.format("変数.%sに%sが設定されること", name, express);
 				Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
-				ExcelUtils.setValue(row, p.getCol(), name);
-				ExcelUtils.setValueForCase(row, init);
-
-				String line = BJavaGen.getUnitSource(project, this.model, assign);
-				if (line != null) {
-					int index = line.indexOf("*/");
-					if (index > 0) {
-						line = line.substring(index + 2);
-					}
-					ExcelUtils.setValueForExpectedResult(row, line.trim());
-					// row.createCell(CaseColumn.EXPECTED_RESULT.getColumn()).setCellValue(line.trim());
-				}
-				// p.setRow(p.getRow() + 1);
+				ExcelUtils.setValueForCase(row, casea);
+				ExcelUtils.setValueForExpectedResult(row, expected);
 			}
 		} else {
 			BAssignExpression assign = (BAssignExpression) a;
 			BValuable left = assign.getLeft();
-
-			// when it is expression(value set)
-			// String name = ((IUnit) assign).getNumber().toString();
-			String name = p.getPath().toString();
-
-			if (right == null || (right instanceof BVariable && right.getBClass() == null)) {
-				name = name + "NULLを設定する ";
-			} else {
-				name = name + "が" + this.createValuable(right, p, false) + " を設定する";
+			BValuable value = assign.getRight();
+			BVariable o = null;
+			if (left instanceof BVariable) {
+				o = (BVariable) left;
 			}
-			name = name + this.createValuable(left, p, false);
-			this.makeReturnLine(name, sheet, p, p.getPath().toString(), false);
+
+			if (value instanceof BInvoker && left instanceof BVariable) {
+				BInvoker in = (BInvoker) value;
+				BValuable v = in.getInvokeChild();
+				if (!(v instanceof BConstructor)) {
+					this.createInvoker(in, sheet, p, true, (BVariable) left);
+					// createInvoker = true;
+				}
+			} else {
+				// when it is expression(value set)
+				// String name = ((IUnit) assign).getNumber().toString();
+				String name = "";// p.getPath().toString();
+				if (right == null || (right instanceof BVariable && right.getBClass() == null)) {
+					name = name + "NULLを設定する ";
+				} else {
+					name = o.getLogicName();
+					String casea = String.format("変数.%sの設定", name);
+					String expected = String.format("変数.%sに%sが設定されること", name, this.createValuable(right, p, false));
+					Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+					ExcelUtils.setValueForCase(row, casea);
+					ExcelUtils.setValueForExpectedResult(row, expected);
+				}
+				// name = name + this.createValuable(left, p, false);
+				// this.makeReturnLine(name, sheet, p, p.getPath().toString(), false);
+			}
 
 		}
 	}
@@ -479,56 +540,62 @@ public class ExcelProcess {
 	private void createIf(BMultiCondition ifUnit, Sheet sheet, ExcelLogicProgress p) {
 
 		List<BConditionUnit> units = ifUnit.getConditionUnits();
-		int i = 0;
 		String s = "";
 		p.setCol(4);
 		int column = p.getCol();
+		String happy = "の場合";
+		String excp = "以外";
+		boolean both = false;
 		for (BConditionUnit unit : units) {
 
-			// p.increaseDepth();
-//			String title = s;
-
 			BValuable ex = unit.getCondition();
-			if (ex == null) {
-			} else {
-				s = s + this.createValuable(ex, p, false);
+			if (ex != null) {
+				s = this.createValuable(ex, p, false);
 			}
-			if (unit.isLast()) {
-//				s = s + "上記以外の場合 ";
-//				Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
-//				ExcelUtils.setValue(row, column, s);
-//				ExcelUtils.setValueForCase(row, ExcelTemplate.NULL_STRING);
-//				ExcelUtils.setValueForExpectedResult(row, "下記処理を継続する");
-			} else {
-				s = s + "の場合 ";
-				// if (i != 0) {
-				// s = s + "の場合";// else
-				// } else {
-				// if (ex instanceof BInvoker) {
-				// s = s + "の場合 ";
-				// } else {
-				// s = s + "の場合 ";
-				// }
-				// }
+			System.out.println("createIf:" + s);
+			if (!unit.isLast()) { // if statement
+				s = ExcelUtils.replace(s, "(\\S+) is null", "%sの値がNULLの場合");
+				s = ExcelUtils.replace(s, "\\S+isEmpty\\((\\S+)\\)", "%sの値がNULLの場合");
+				s = ExcelUtils.replace(s, "StringUtils.isNotEmpty\\((\\S+)\\)", "%sの値がNULL以外の場合");
+				Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+				ExcelUtils.setValueForMidCategory(row, s);
+				// this.makeLine(s, sheet, p);
+			} else { // else statement
+				both = true;
+				s = reverse(s, happy, excp);
+				Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+				ExcelUtils.setValueForMidCategory(row, s);
 			}
-			i++;
-			// make return
-			// this.makeReturnLine(s, sheet, p, title, false);
-			// p.setRow(p.getRow() + 1);
+//			String desc = String.format("%s", s);
+//			this.makeLine(desc, sheet, p);
+//			System.out.println(desc);
 			p.setCreateNewRow(false);
-			this.makeLine(s, sheet, p);
 			this.createLogicBody(unit.getLogicBody(), sheet, p);
-			// p.setRow(p.getRow() + 1);
 			p.setCreateNewRow(true);
-			// p.decreaseDepth();
 		}
 
-		String end = "上記以外の場合 ";
-		Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
-		ExcelUtils.setValue(row, column, end);
-		ExcelUtils.setValueForCase(row, ExcelTemplate.NULL_STRING);
-		ExcelUtils.setValueForExpectedResult(row, "下記処理を継続する");
+		if (!both) {
+			Row row = ExcelUtils.makeRowWithRowNum(sheet, p);
+			ExcelUtils.setValueForMidCategory(row, reverse(s, happy, excp));
+			ExcelUtils.setValueForCase(row, ExcelTemplate.NULL_STRING);
+			ExcelUtils.setValueForExpectedResult(row, "下記処理を継続する");
+		}
 
+	}
+
+	private String reverse(String s, String happy, String excp) {
+		StringBuffer b = new StringBuffer(s);
+		if (s.contains(excp)) {
+			int start = s.indexOf(excp);
+			int end = start + excp.length();
+			b.delete(start, end);
+		} else {
+			int offset = s.indexOf(happy);
+			if (offset != -1) {
+				b.insert(offset, excp);
+			}
+		}
+		return b.toString();
 	}
 
 	private void makeLine(String s, Sheet sheet, ExcelLogicProgress p) {
@@ -538,7 +605,7 @@ public class ExcelProcess {
 			System.err.println(String.format("row {%d} doens't exit, now created", p.getRow()));
 		}
 		ExcelUtils.setValueForNo(row, p.getRowNum());
-		ExcelUtils.setValueForBigCategory(row, s);
+		ExcelUtils.setValueForLitCategory(row, s);
 		// ExcelUtils.setValue(row, p.getCol(), s);
 	}
 
@@ -651,6 +718,7 @@ public class ExcelProcess {
 
 		if (parentValue != null) {
 			if (parentValue.getBClass().isData() || childValue instanceof BVariable) {
+				// setMethod
 				if (parameters.size() == 1) {
 					String parent = this.getDataSetValue(invoker, p);// this.createValuable(invoker, p);
 					String value = this.getDataSetValue(parameters.get(0), p);// this.createValuable(parameters.get(0),
@@ -662,6 +730,8 @@ public class ExcelProcess {
 						}
 					}
 					return;
+				} else if (parameters.size() == 0) {
+					// getMethod
 				}
 			}
 		}
@@ -838,19 +908,18 @@ public class ExcelProcess {
 		}
 
 		log("createMethodInvoker:" + title);
-
-		p.setRow(p.getRow() + 1);
-		Row rowx = sheet.createRow(p.getRow());
-		rowx.createCell(p.getCol()).setCellValue(title);
-		ExcelUtils.setValueForNo(rowx, p.getRowNum());
-
-		Cell cell = ExcelUtils.getCell(rowx, p.getCol());
-		cell.setCellValue(String.format("%sクラスの%sを呼び出して", parentClassName, mt.getLogicName()));
-
 		Cell cell7, cell8 = null;
-		if (paras.size() > 0) {
+		StringBuffer caseBuffer = new StringBuffer();
+		StringBuffer descBuffer = new StringBuffer();
 
+		Row rowx = ExcelUtils.makeRowWithRowNum(sheet, p);
+		String lit = String.format("%sクラスの%sを呼び出して", parentClassName, mt.getLogicName());
+		ExcelUtils.setValueForLitCategory(rowx, lit);
+		caseBuffer.append(String.format("メソッド「%s.%s」を呼び出し", invoker.getInvokeParent(), invoker.getInvokeChild()));
+
+		if (paras.size() > 0) {
 			String paramName = "";
+			String name = "";
 			for (int i = 0; i < paras.size(); i++) {
 				BValuable obj = paras.get(i);
 				String type = BJavaGen.getTypeSource(project, this.model, obj);
@@ -859,243 +928,53 @@ public class ExcelProcess {
 				}
 
 				if (obj instanceof BVariable) {
-					// name
 					BVariable para = (BVariable) obj;
 					paramName = para.getLogicName();
+					name = para.getName();
 
 				} else if (obj instanceof BInvoker) {
-					// name
 					BInvoker bin = (BInvoker) obj;
 					paramName = params.get(i).getLogicName();
 					paramName = (this.createValuable(bin, p, false));
 				}
 
-				cell7 = ExcelUtils.getCell(rowx, CaseColumn.CASE.getColumn());
-				cell7.setCellValue("入力パラメータ：" + paramName);
-
-				cell8 = ExcelUtils.getCell(rowx, CaseColumn.EXPECTED_RESULT.getColumn());
-				cell8.setCellValue(String.format("%sに「上記編集した%s」を設定する", paramName, paramName));
-
-				p.setRow(p.getRow() + 1);
-				rowx = sheet.createRow(p.getRow());
-				ExcelUtils.setValueForNo(rowx, p.getRowNum());
+				caseBuffer.append(String.format("\n%d.入力パラメータ： %s", i + 1, paramName));
+				if (StringUtils.isNotEmpty(name)) {
+					descBuffer.append(String.format("%sに「上記編集した%s」を設定する ", paramName, name));
+				}
+//				cell7 = ExcelUtils.getCell(rowx, CaseColumn.CASE.getColumn());
+//				cell7.setCellValue("入力パラメータ：" + paramName);
+//
+//				cell8 = ExcelUtils.getCell(rowx, CaseColumn.EXPECTED_RESULT.getColumn());
+//				cell8.setCellValue(String.format("%sに「上記編集した%s」を設定する", paramName, name));
+//
+//				p.setRow(p.getRow() + 1);
+//				rowx = sheet.createRow(p.getRow());
+//				ExcelUtils.setValueForNo(rowx, p.getRowNum());
 			}
 		}
 
 		cell7 = ExcelUtils.getCell(rowx, CaseColumn.EXPECTED_RESULT.getColumn());
 		if (returnValueParam != null) {
 			String retStr = returnValueParam.getLogicName();
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("戻り値：%s", retStr));
-			sb.append(ExcelUtils.getReturnStr());
-
+			descBuffer.append(String.format("\n戻り値：%s", retStr));
 			Pattern ptn = Pattern.compile("([A-Z])(\\d{4})");
 			Matcher m = ptn.matcher(retStr);
 			if (m.find()) {
 				String tbl1 = "", tbl2 = "", tblName = "";
-//				tbl1 = m.group(1);
-//				tbl2 = m.group(2);
 				tblName = m.group();
-//				Row startRow = ExcelUtils.getRow(sheet, 6);
-//				String serviceId = ExcelUtils.getCell(startRow, CaseColumn.SERVICE_ID.getColumn()).getStringCellValue();
-//				String template = ExcelTemplate.JCLService.get(serviceId);
-//				if (template != null) {
-//					tblName = tbl1 + "_" + template + tbl2;
-//				}
-				sb.append(String.format("テーブル名：%s", tblName));
+				descBuffer.append(String.format("\nテーブル名：%s", tblName));
 			}
-
-			cell7.setCellValue(sb.toString());
 		} else {
-			cell7.setCellValue("戻り値：void");
+			descBuffer.append("\n戻り値：なし");
 		}
 
+		if (descBuffer.charAt(0) == 10) {
+			descBuffer.deleteCharAt(0);
+		}
+		cell7.setCellValue(descBuffer.toString());
 		cell8 = ExcelUtils.getCell(rowx, CaseColumn.CASE.getColumn());
-		cell8.setCellValue(String.format("メソッド「%s.%s」を呼び出し", parentClassName, mt.getLogicName()));
-
-//		if (withTitle || paras.size() == 0) {
-//			// title
-//			// Row row = sheet.createRow(p.getRow());
-//			//row.createCell(p.getCol()).setCellValue(title);
-//		}
-
-//		if (paras.size() == 0) {
-//			String rvalue = null;
-//			if (mt.getBClass() != null && !mt.getBClass().getLogicName().equals(BClass.VOID)) {
-//				rvalue = mt.getBClass().getLogicName();
-//			}
-//			if (rvalue != null) {
-//				title = BJavaGen.getValuableSource(project, this.model, invoker);
-//				Row row = ExcelUtils.getRow(sheet, p.getRow());
-//				row.getCell(p.getCol()).setCellValue(title);
-//			}
-//			return;
-//		}
-
-//		p.setRow(p.getRow() + 1);
-
-		// body
-
-//		int start = p.getCol() + 1;
-//		int end = p.getWidth() - 1;
-//		int middle = (end - start) * 2 / 3;
-//		int width = end - start;
-//		int title_width = width / 2 - ExcelLogicProgress.invoker_title_value_width;
-//		if (title_width <= 0)
-//			title_width = 1;
-		// explanation name
-//		CellRangeAddress exp = new CellRangeAddress(p.getRow(), p.getRow(), start, start + width);
-//		ExcelUtils.fillAndBorderRegion(exp, sheet, style);
-//		Cell expc = ExcelUtils.getRow(sheet, p.getRow()).getCell(start);
-//		expc.setCellValue("メソッド概要");
-//		p.setRow(p.getRow() + 1);
-//
-//		
-//		// メソッド name
-//		CellRangeAddress className = new CellRangeAddress(p.getRow(), p.getRow(), start, start + title_width);
-//		ExcelUtils.fillAndBorderRegion(className, sheet, style);
-//		Cell cc = ExcelUtils.getRow(sheet, p.getRow()).getCell(start);
-//		cc.setCellValue("メソッド名");
-//
-//		CellRangeAddress classNameValue = new CellRangeAddress(p.getRow(), p.getRow(), start + title_width + 1, middle);
-//		ExcelUtils.borderRegion(classNameValue, sheet, style);
-//		ExcelUtils.getRow(sheet, p.getRow()).getCell(start + title_width + 1).setCellValue(mt.getLogicName());
-//
-//		// 実装クラス name
-//		CellRangeAddress methodName = new CellRangeAddress(p.getRow(), p.getRow(), middle + 1, middle + title_width);
-//		ExcelUtils.fillAndBorderRegion(methodName, sheet, style);
-//		cc = ExcelUtils.getRow(sheet, p.getRow()).getCell(middle + 1);
-//		cc.setCellValue("実装クラス");
-//
-//		CellRangeAddress methodNameValue = new CellRangeAddress(p.getRow(), p.getRow(), middle + title_width + 1, end);
-//		ExcelUtils.borderRegion(methodNameValue, sheet, style);
-//		ExcelUtils.getRow(sheet, p.getRow()).getCell(middle + title_width + 1).setCellValue(parentClassName);
-
-//		if (paras.size() > 0) {
-//
-////			p.setRow(p.getRow() + 1);
-////
-////			// parameters title
-////			CellRangeAddress parameters = new CellRangeAddress(p.getRow(), p.getRow() + paras.size(), start,
-////					start + title_width);
-////			ExcelUtils.fillAndBorderRegion(parameters, sheet, style);
-////			ExcelUtils.getRow(sheet, p.getRow()).getCell(start).setCellValue("入力パラメータ");
-////
-////			// parameters title
-////
-////			width = width - title_width;
-////			start = start + title_width + 1;
-////
-////			// No.
-////			CellRangeAddress parameterNumber = new CellRangeAddress(p.getRow(), p.getRow(), start, start);
-////			ExcelUtils.fillAndBorderRegion(parameterNumber, sheet, style);
-////			Row titles = ExcelUtils.getRow(sheet, p.getRow());
-////			titles.getCell(start).setCellValue("No.");
-////
-////			// parameter
-////			CellRangeAddress parameterstitle = new CellRangeAddress(p.getRow(), p.getRow(), start + 1, middle);
-////			ExcelUtils.fillAndBorderRegion(parameterstitle, sheet, style);
-////			titles.getCell(start + 1).setCellValue("パラメータ");
-////
-////			// type
-////			CellRangeAddress edtistitle = new CellRangeAddress(p.getRow(), p.getRow(), middle + 1,
-////					start + title_width * 2 + 14);
-////			ExcelUtils.fillAndBorderRegion(edtistitle, sheet, style);
-////			titles.getCell(middle + 1).setCellValue("データ型");
-////
-////			// value
-////			CellRangeAddress typetitle = new CellRangeAddress(p.getRow(), p.getRow(), start + title_width * 2 + 15,
-////					end);
-////			ExcelUtils.fillAndBorderRegion(typetitle, sheet, style);
-////			titles.getCell(start + title_width * 2 + 15).setCellValue("設定値");
-//
-//			// values
-////			for (int i = 0; i < paras.size(); i++) {
-////				BValuable obj = paras.get(i);
-////				String type = BJavaGen.getTypeSource(project, this.model, obj);
-////				if (type == null) {
-////					type = "null";
-////				}
-////				p.setRow(p.getRow() + 1);
-////
-////				// No.
-//////				parameterstitle = new CellRangeAddress(p.getRow(), p.getRow(), start, start);
-//////				ExcelUtils.borderRegion(parameterstitle, sheet, style);
-//////				titles = ExcelUtils.getRow(sheet, p.getRow());
-//////				titles.getCell(start).setCellValue("" + (i + 1));
-//////				System.out.println("No." + (i + 1));
-//////
-//////				if (obj instanceof BVariable) {
-//////					// name
-//////					BVariable para = (BVariable) obj;
-////////					parameterstitle = new CellRangeAddress(p.getRow(), p.getRow(), start + 1, middle);
-////////					ExcelUtils.borderRegion(parameterstitle, sheet, style);
-////////					titles = ExcelUtils.getRow(sheet, p.getRow());
-////////					titles.getCell(start + 1).setCellValue(params.get(i).getLogicName());
-//////					String methodNamex = "メソッド名：" + params.get(i).getLogicName();
-//////					System.out.println(methodNamex);
-//////					// type
-////////					edtistitle = new CellRangeAddress(p.getRow(), p.getRow(), middle + 1, start + title_width * 2 + 14);
-////////					ExcelUtils.borderRegion(edtistitle, sheet, style);
-////////					titles.getCell(middle + 1).setCellValue(type);
-//////					String impClass = "実装クラス：" + type;
-//////					// value
-////////					typetitle = new CellRangeAddress(p.getRow(), p.getRow(), start + title_width * 2 + 15, end);
-////////					ExcelUtils.borderRegion(typetitle, sheet, style);
-////////					titles.getCell(start + title_width * 2 + 15).setCellValue(para.getLogicName());
-//////					System.out.println(para.getLogicName());
-//////
-//////				} else if (obj instanceof BInvoker) {
-//////					// name
-//////					BInvoker bin = (BInvoker) obj;
-////////					parameterstitle = new CellRangeAddress(p.getRow(), p.getRow(), start + 1, middle);
-////////					ExcelUtils.borderRegion(parameterstitle, sheet, style);
-////////					titles = ExcelUtils.getRow(sheet, p.getRow());
-////////					titles.getCell(start + 1).setCellValue(params.get(i).getLogicName());
-//////					System.out.println(params.get(i).getLogicName());
-//////
-//////					// type
-////////					edtistitle = new CellRangeAddress(p.getRow(), p.getRow(), middle + 1, start + title_width * 2 + 10);
-////////					ExcelUtils.borderRegion(edtistitle, sheet, style);
-////////					titles.getCell(middle + 1).setCellValue(type);
-//////
-//////					System.out.println(type);
-//////					// value
-////////					typetitle = new CellRangeAddress(p.getRow(), p.getRow(), start + title_width * 2 + 11, end);
-////////					ExcelUtils.borderRegion(typetitle, sheet, style);
-////////					titles.getCell(start + title_width * 2 + 11).setCellValue(this.createValuable(bin, p, false));
-//////					System.out.println(this.createValuable(bin, p, false));
-//////				}
-////			}
-//		}
-
-		// return
-//		p.setRow(p.getRow() + 1);
-//		start = p.getCol() + 1;
-//		width = p.getWidth() - 1;
-//
-//		// return title
-//		CellRangeAddress returns = new CellRangeAddress(p.getRow(), p.getRow(), start, start + title_width);
-//		ExcelUtils.fillAndBorderRegion(returns, sheet, style);
-//		ExcelUtils.getRow(sheet, p.getRow()).getCell(start).setCellValue("戻り値");
-//
-//		// return value
-//		CellRangeAddress returnValue = new CellRangeAddress(p.getRow(), p.getRow(), start + title_width + 1, middle);
-//		ExcelUtils.borderRegion(returnValue, sheet, style);
-//		String rvalue = "-";
-//		if (returnValueParam != null) {
-//			rvalue = returnValueParam.getName();
-//		}
-//		ExcelUtils.getRow(sheet, p.getRow()).getCell(start + title_width + 1).setCellValue(rvalue);
-//
-//		// return type
-//		CellRangeAddress returnType = new CellRangeAddress(p.getRow(), p.getRow(), middle + 1, width);
-//		ExcelUtils.borderRegion(returnType, sheet, style);
-//		String rtvalue = "-";
-//		if (mt.getBClass() != null && !mt.getBClass().getLogicName().equals(BClass.VOID)) {
-//			rtvalue = mt.getBClass().getLogicName();
-//		}
-//		ExcelUtils.getRow(sheet, p.getRow()).getCell(middle + 1).setCellValue(rtvalue);
+		cell8.setCellValue(caseBuffer.toString());
 	}
 
 	private int createClassHeader(BClass logic, Sheet sheet) {

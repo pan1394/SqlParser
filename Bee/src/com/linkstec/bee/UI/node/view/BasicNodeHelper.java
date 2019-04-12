@@ -222,6 +222,7 @@ public class BasicNodeHelper {
 					b.getUserAttributes().putAll(node.getUserAttributes());
 					// b.setUserAttributes(node.getUserAttributes());
 					b.applyStyle();
+					// b.setUserObject(node.getUserObject());
 				}
 
 				node.removeFromParent();

@@ -3,6 +3,7 @@ package com.linkstec.bee.UI.spective.basic.logic.node.table;
 import java.util.List;
 
 import com.linkstec.bee.UI.BeeConstants;
+import com.linkstec.bee.UI.node.BasicNode;
 import com.linkstec.bee.UI.spective.basic.BasicBook;
 import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.UI.spective.basic.config.model.ModelConstants.ProcessType;
@@ -10,13 +11,18 @@ import com.linkstec.bee.UI.spective.basic.data.BasicDataModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BLogicEditActions;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPatternModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPatternSheet;
+import com.linkstec.bee.UI.spective.basic.logic.edit.BTableModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BTableSelectModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BTableSelectSheet;
 import com.linkstec.bee.UI.spective.basic.logic.model.table.BSegmentLogic;
+import com.linkstec.bee.UI.spective.basic.logic.node.BDetailNodeWrapper;
+import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.BTansferHolderNode;
 import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BParameter;
+import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IPatternCreator;
 import com.linkstec.bee.core.fw.basic.BLogic;
@@ -29,6 +35,7 @@ import com.linkstec.bee.core.fw.editor.BEditorModel;
 import com.linkstec.bee.core.fw.logic.BAssignment;
 import com.linkstec.bee.core.fw.logic.BInvoker;
 import com.mxgraph.model.mxGeometry;
+import com.mxgraph.model.mxICell;
 
 public class BTableNesSelectNode extends BTableValueNode implements ITableSegmentCell, ITableObject {
 
@@ -42,10 +49,20 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 
 	public static final int TYPE_TABLE_OBJECT = 1;
 	public static final int TYPE_VALUE = 2;
+
 	private String editedName = null;
+	private BVariable asNameParamter = null;
 
 	public BTableNesSelectNode(BPath path) {
 		logic = new BSegmentLogic(path, this);
+	}
+
+	public int getType() {
+		return type;
+	}
+
+	public void setType(int type) {
+		this.type = type;
 	}
 
 	public String getAsName() {
@@ -54,6 +71,44 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 
 	public void setAsName(String asName) {
 		this.asName = asName;
+	}
+
+	@Override
+	public void childAdded(BNode node, BasicLogicSheet sheet) {
+		if (node instanceof BTansferHolderNode) {
+			BTansferHolderNode t = (BTansferHolderNode) node;
+			List<BNode> list = t.getNodes();
+			for (BNode n : list) {
+				this.childAdded(n, sheet);
+			}
+			node.removeFromParent();
+			return;
+		} else if (node instanceof BDetailNodeWrapper) {
+			BDetailNodeWrapper wrapper = (BDetailNodeWrapper) node;
+			wrapper.removeFromParent();
+			BasicNode basic = wrapper.getNode();
+			this.cellAdded(basic);
+			node.removeFromParent();
+		}
+	}
+
+	@Override
+	public void cellAdded(mxICell cell) {
+		if (cell instanceof BInvoker) {
+			BInvoker bin = (BInvoker) cell;
+			BValuable child = bin.getInvokeChild();
+			if (child instanceof BVariable) {
+				asNameParamter = (BVariable) child;
+
+			}
+		} else if (cell instanceof BVariable) {
+			asNameParamter = (BVariable) cell;
+
+		} else if (cell instanceof BAssignment) {
+			BAssignment assign = (BAssignment) cell;
+			asNameParamter = assign.getLeft();
+
+		}
 	}
 
 	@Override
@@ -87,6 +142,11 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 	}
 
 	@Override
+	public boolean isValidDropTarget(Object[] cells) {
+		return true;
+	}
+
+	@Override
 	public Object getValue() {
 		if (this.editedName != null) {
 			return this.editedName;
@@ -111,8 +171,8 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 	@Override
 	public void doubleClicked(BasicLogicSheet sheet) {
 		BEditorModel model = sheet.getEditorModel();
-		if (model instanceof BTableSelectModel) {
-			BTableSelectModel select = (BTableSelectModel) model;
+		if (model instanceof BTableModel) {
+			BTableModel select = (BTableModel) model;
 			String parentName = select.generaParentName();
 
 			BasicBook book = sheet.findBook();
@@ -122,6 +182,7 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 				} else {
 					logic.setName(sheet.getEditorModel().getName() + "[子SELECT]");
 				}
+				logic.getPath().addUserAttribute("NES_SELECT", "NES_SELECT");
 				BTableSelectSheet editor = (BTableSelectSheet) BLogicEditActions.addNewTypeEditor(sheet.getProject(),
 						logic.getPath(), book, ProcessType.TYPE_TABLE);
 				BEditorModel generated = editor.getEditorModel();
@@ -138,6 +199,7 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 
 	@Override
 	public String getSQL(ITableSql tsql) {
+
 		BTableSelectModel model = null;
 		List<BEditorModel> models = tsql.getEditors();
 		boolean format = tsql.isFormat();
@@ -145,9 +207,11 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 			if (m instanceof BTableSelectModel) {
 				BTableSelectModel select = (BTableSelectModel) m;
 
-				if (select.getActionPath().getUniqueKey() == this.getLogic().getPath().getUniqueKey()) {
+				// if (select.getActionPath().getUniqueKey() ==
+				// this.getLogic().getPath().getUniqueKey()) {
+				if (select.getActionPath().equals(this.getLogic().getPath())) {
 					model = select;
-					break;
+
 				}
 			}
 		}
@@ -156,17 +220,17 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 		}
 		tsql.getInfo().setNesSelect();
 		String nes = model.getSQL(tsql);
-		String sql = "(" + nes + ")";
+		String sql = this.getHeader();
 
 		if (format) {
 			nes = "\t" + nes;
 			nes = nes.replace("\r\n", "\r\n\t");
-			sql = "(\r\n" + nes + "\r\n)";
+			sql = sql + "(\r\n" + nes + "\r\n)";
+		} else {
+			sql = sql + "(" + nes + ")";
 		}
 
-		if (asName != null) {
-			sql = sql + " " + asName;
-		}
+		sql = sql + this.getFooter(sql);
 		if (format) {
 			sql = sql.replace("\r\n", "\r\n\t");
 		}
@@ -196,9 +260,17 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 			BasicDataModel bclass = new BasicDataModel(null);
 			bclass.setName("子SELECT");
 			bclass.setLogicName(asName);
+			if (this.asNameParamter != null) {
+				bclass.setLogicName(this.asNameParamter.getLogicName());
+			}
 			var.setBClass(bclass);
 			var.setLogicName(asName);
 			var.setName(asName);
+			if (this.asNameParamter != null) {
+				var.setLogicName(this.asNameParamter.getLogicName());
+				var.setName(this.asNameParamter.getName());
+			}
+
 			BTableSelectModel model = null;
 			if (models == null) {
 				Debug.a();
@@ -251,9 +323,8 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 		for (BEditorModel m : models) {
 			if (m instanceof BTableSelectModel) {
 				BTableSelectModel select = (BTableSelectModel) m;
-				if (select.getActionPath().getUniqueKey() == this.getLogic().getPath().getUniqueKey()) {
+				if (select.getActionPath().equals(this.getLogic().getPath())) {
 					model = select;
-					break;
 				}
 			}
 		}
@@ -261,22 +332,71 @@ public class BTableNesSelectNode extends BTableValueNode implements ITableSegmen
 			return "";
 		}
 		tsql.getInfo().setNesSelect();
-		String sql = "(" + model.getSQLExp(tsql) + ")";
+		String sql = this.getHeaderExp();
+
 		if (format) {
-			sql = "(\r\n" + model.getSQLExp(tsql) + "\r\n)";
+			sql = sql + "(\r\n" + model.getSQLExp(tsql) + "\r\n)";
+		} else {
+			sql = sql + "(" + model.getSQLExp(tsql) + ")";
 		}
 
-		if (asName != null) {
-			sql = sql + " " + asName;
-		}
+		sql = sql + this.getFooterExp(sql);
 		if (format) {
 			sql = sql.replace("\r\n", "\r\n\t");
 		}
 		return sql;
 	}
 
+	protected String getHeader() {
+		return "";
+	}
+
+	protected String getHeaderExp() {
+		return "";
+	}
+
+	protected String getFooter(String sql) {
+		if (this.asNameParamter != null) {
+			sql = sql + " AS " + asNameParamter.getLogicName();
+		} else {
+
+			if (asName != null) {
+				return " " + asName;
+			}
+		}
+		return "";
+	}
+
+	protected String getFooterExp(String sql) {
+		if (this.asNameParamter != null) {
+			sql = sql + " AS " + asNameParamter.getName();
+		} else {
+
+			if (asName != null) {
+				return " " + asName;
+			}
+		}
+		return "";
+	}
+
 	@Override
 	public BParameter getParameter() {
+		return null;
+	}
+
+	@Override
+	public String getAsParamName() {
+		if (this.asNameParamter != null) {
+			return this.asNameParamter.getName();
+		}
+		return null;
+	}
+
+	@Override
+	public String getAsParamLogicName() {
+		if (this.asNameParamter != null) {
+			return this.asNameParamter.getLogicName();
+		}
 		return null;
 	}
 

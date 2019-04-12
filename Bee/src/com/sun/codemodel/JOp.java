@@ -167,6 +167,10 @@ abstract public class JOp {
 		}
 
 		public void generate(JFormatter f) {
+			// TODO
+			if (right == null) {
+				return;
+			}
 
 			f.p('(').g(left).p(op).g(right).p(')');
 

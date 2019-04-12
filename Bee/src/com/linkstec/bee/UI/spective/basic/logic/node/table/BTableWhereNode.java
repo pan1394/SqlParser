@@ -57,7 +57,7 @@ public class BTableWhereNode extends BTableRecordListNode {
 			BFixedValueNode n = (BFixedValueNode) node;
 			this.insert(n);
 		} else {
-			node.removeFromParent();
+			super.childAdded(node, sheet);
 		}
 
 	}

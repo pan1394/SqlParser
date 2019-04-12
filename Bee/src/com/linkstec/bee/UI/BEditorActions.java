@@ -1,7 +1,11 @@
 package com.linkstec.bee.UI;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,6 +17,8 @@ import java.util.Hashtable;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.JColorChooser;
+import javax.swing.JDialog;
 import javax.swing.JScrollPane;
 
 import com.linkstec.bee.UI.editor.task.search.SearchNode;
@@ -35,6 +41,9 @@ import com.linkstec.bee.core.fw.editor.BEditor;
 import com.linkstec.bee.core.fw.editor.BEditorModel;
 import com.linkstec.bee.core.fw.editor.BEditorUndo;
 import com.linkstec.bee.core.fw.editor.BProject;
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.util.mxUtils;
+import com.mxgraph.view.mxGraph;
 
 public class BEditorActions {
 
@@ -334,6 +343,66 @@ public class BEditorActions {
 			editor.selectAll(e);
 		}
 
+	}
+
+	/**
+	 *
+	 */
+	@SuppressWarnings("serial")
+	public static class ColorAction extends AbstractAction {
+		/**
+		 * 
+		 */
+		protected String name, key;
+
+		/**
+		 * 
+		 * @param key
+		 */
+		public ColorAction(String name, String key) {
+			this.name = name;
+			this.key = key;
+		}
+
+		/**
+		 * 
+		 */
+		public void actionPerformed(ActionEvent e) {
+			BEditor editor = Application.getInstance().getCurrentEditor();
+			if (editor instanceof mxGraphComponent) {
+				mxGraphComponent graphComponent = (mxGraphComponent) editor;
+				mxGraph graph = graphComponent.getGraph();
+
+				if (!graph.isSelectionEmpty()) {
+
+					// Color newColor = JColorChooser.showDialog(graphComponent, name, null);
+
+					int s = BeeUIUtils.getDefaultFontSize();
+					JColorChooser chooser = new JColorChooser();
+					chooser.getComponents()[0].setPreferredSize(new Dimension(s * 20, s * 10));
+
+					ActionListener ok = new ActionListener() {
+
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							Color newColor = chooser.getColor();
+
+							if (newColor != null) {
+								graph.setCellStyles(key, mxUtils.hexString(newColor));
+							}
+						}
+
+					};
+
+					JDialog dialog = JColorChooser.createDialog(graphComponent, name, true, chooser, ok, null);
+					dialog.setLayout(new BorderLayout());
+					dialog.add(chooser, BorderLayout.CENTER);
+					// dialog.setPreferredSize(new Dimension(1000, 2000));
+					dialog.setVisible(true);
+
+				}
+			}
+		}
 	}
 
 	public static class SearchSourceAction extends BasicAction implements BeeDialogCloseAction {

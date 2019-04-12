@@ -90,6 +90,11 @@ public class MapAddLogic extends BasicLogic {
 
 			IPatternCreator view = PatternCreatorFactory.createView();
 			BInvoker invoker = view.createMethodInvoker();
+			if (this.target instanceof BVariable) {
+				BVariable var = (BVariable) this.target;
+				var.setClass(false);
+				var.setCaller(true);
+			}
 			invoker.setInvokeParent(this.target);
 			BMethod method = view.createMethod();
 			method.setLogicName("put");

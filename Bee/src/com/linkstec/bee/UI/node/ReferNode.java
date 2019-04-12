@@ -813,7 +813,7 @@ public class ReferNode extends BasicNode implements Serializable, BInvoker, IUni
 	public void setInvokeParent(BValuable parent) {
 		BasicNode node = (BasicNode) this.getCellByBID(parentBID);
 		if (node == null) {
-			node = (BasicNode) this.getCellByBID(this.assignTitleBID);
+			node = (BasicNode) this.getCellByBID(this.assignTypeBID);
 		}
 		// this(),super()
 		if (parent == null) {
@@ -831,7 +831,8 @@ public class ReferNode extends BasicNode implements Serializable, BInvoker, IUni
 				// node.setValue(parent);
 			}
 		} else {
-			node.setValue(parent);
+			node.replace((mxCell) parent);
+			// node.setValue(parent);
 		}
 	}
 

@@ -1,6 +1,7 @@
 package com.linkstec.bee.UI.spective.basic.logic.node.table;
 
 import com.linkstec.bee.UI.BeeConstants;
+import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BValuable;
@@ -9,6 +10,7 @@ import com.linkstec.bee.core.fw.basic.BLogic;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.IExceptionCell;
 import com.linkstec.bee.core.fw.basic.ILogicCell;
+import com.linkstec.bee.core.fw.basic.ITableSql;
 import com.linkstec.bee.core.fw.logic.BInvoker;
 import com.mxgraph.model.mxICell;
 import com.mxgraph.util.mxPoint;
@@ -68,7 +70,7 @@ public class BTableRowNode extends BNode implements ILogicCell {
 		return node;
 	}
 
-	public void doLayout() {
+	public void doLayout(BasicLogicSheet sheet) {
 		int count = this.getChildCount();
 		double height = 0;
 		double width = 0;
@@ -76,6 +78,12 @@ public class BTableRowNode extends BNode implements ILogicCell {
 			mxICell child = this.getChildAt(i);
 			if (child instanceof BNode) {
 				BNode node = (BNode) child;
+				if (node instanceof BTableRowValueCellNode) {
+					BTableRowValueCellNode row = (BTableRowValueCellNode) node;
+					if (row.isSqlEdtior()) {
+						new BTableNodeLayout(row, sheet);
+					}
+				}
 				node.getGeometry().setOffset(new mxPoint(width, 0));
 				width = width + node.getGeometry().getWidth();
 				height = Math.max(node.getGeometry().getHeight(), height);
@@ -102,6 +110,39 @@ public class BTableRowNode extends BNode implements ILogicCell {
 			if (child instanceof BTableRowValueCellNode) {
 				BTableRowValueCellNode node = (BTableRowValueCellNode) child;
 				return node.getLogic();
+			}
+		}
+		return null;
+	}
+
+	public String getSQL(ITableSql sql) {
+		int count = this.getChildCount();
+		if (count == 4) {
+			String logic = (String) this.getChildAt(2).getValue();
+			mxICell child = this.getChildAt(3);
+			if (child instanceof BTableRowValueCellNode) {
+				BTableRowValueCellNode node = (BTableRowValueCellNode) child;
+				String s = node.getSQL(sql);
+				if (s != null) {
+					return logic + " = " + s;
+				}
+			}
+		}
+		return null;
+	}
+
+	public String getSQLExp(ITableSql sql) {
+		int count = this.getChildCount();
+		if (count == 4) {
+			String name = (String) this.getChildAt(1).getValue();
+			mxICell child = this.getChildAt(3);
+			if (child instanceof BTableRowValueCellNode) {
+				BTableRowValueCellNode node = (BTableRowValueCellNode) child;
+
+				String s = node.getSQLExp(sql);
+				if (s != null) {
+					return name + " = " + s;
+				}
 			}
 		}
 		return null;

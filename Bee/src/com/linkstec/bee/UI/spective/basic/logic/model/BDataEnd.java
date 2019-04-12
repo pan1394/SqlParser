@@ -8,6 +8,7 @@ import javax.swing.ImageIcon;
 import com.linkstec.bee.UI.BeeConstants;
 import com.linkstec.bee.UI.spective.basic.data.BasicDataModel;
 import com.linkstec.bee.UI.spective.basic.logic.node.BLogicNode;
+import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.basic.BasicGenUtils;
 import com.linkstec.bee.core.fw.BValuable;
@@ -55,7 +56,8 @@ public class BDataEnd extends BasicLogic implements BEndLogic {
 		List<BLogicUnit> list = new ArrayList<BLogicUnit>();
 
 		// new instance
-		BAssignment var = BasicGenUtils.createInstance(model);
+		BAssignment var = BasicGenUtils.createInstance(model,
+				Application.getInstance().getBasicSpective().getSelection().getProvider());
 
 		list.add(var);
 

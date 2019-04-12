@@ -6,14 +6,15 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
+import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxICell;
 
 public class BTableNodeLayout {
-	private BTableGroupNode container;
+	private BNode container;
 	protected int space = 5;
 
-	public BTableNodeLayout(BTableGroupNode container, BasicLogicSheet sheet) {
+	public BTableNodeLayout(BNode container, BasicLogicSheet sheet) {
 		this.container = container;
 		// this.sheet = sheet;
 		this.layout(sheet);
@@ -61,7 +62,10 @@ public class BTableNodeLayout {
 			}
 
 		}
-		container.fitHeight();
+		if (container instanceof BTableGroupNode) {
+			BTableGroupNode group = (BTableGroupNode) container;
+			group.fitHeight();
+		}
 	}
 
 	public void changeOrder() {
@@ -103,7 +107,9 @@ public class BTableNodeLayout {
 		if (cells.size() == container.getChildCount()) {
 
 			int count = container.getChildCount();
-			for (int i = count - 1; i > 0; i--) {
+			int start = 1;
+
+			for (int i = count - 1; i >= start; i--) {
 				mxICell child = container.getChildAt(i);
 				child.removeFromParent();
 			}

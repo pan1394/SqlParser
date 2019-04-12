@@ -13,6 +13,8 @@ import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableTargetTablesNod
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableUnionAllNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableUnionNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableWhereNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableWithSelectNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableWithesNode;
 import com.linkstec.bee.UI.spective.basic.tree.BasicDataSelectionNode;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.fw.BClass;
@@ -70,6 +72,36 @@ public class BTableSelectSheet extends BTableSheet {
 				break;
 			}
 		}
+	}
+
+	@Override
+	protected boolean cellsAdded(Object[] cells) {
+		if (cells != null && cells.length == 1) {
+			Object obj = cells[0];
+			if (obj instanceof BTableWithSelectNode) {
+				BTableWithSelectNode node = (BTableWithSelectNode) obj;
+				mxICell cell = this.getRoot();
+				int count = cell.getChildCount();
+
+				BTableWithesNode withes = null;
+				for (int i = 0; i < count; i++) {
+					mxICell child = cell.getChildAt(i);
+					if (child instanceof BTableWithesNode) {
+						withes = (BTableWithesNode) child;
+						break;
+					}
+				}
+				if (withes == null) {
+					withes = new BTableWithesNode(this.getPath());
+					cell.insert(withes, 0);
+				}
+				node.getGeometry().setX(20);
+				node.getGeometry().setX(120);
+				withes.insert(node);
+				withes.childAdded(node, this);
+			}
+		}
+		return false;
 	}
 
 	@Override

@@ -22,6 +22,9 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BLogicConnector;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.UI.spective.detail.data.BeeDataModel;
 import com.linkstec.bee.UI.spective.detail.logic.BeeModel;
+import com.linkstec.bee.UI.thread.BeeThread;
+import com.linkstec.bee.core.Application;
+import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BAnnotation;
@@ -35,7 +38,6 @@ import com.linkstec.bee.core.fw.basic.BLogicProvider;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.IBodyCell;
 import com.linkstec.bee.core.fw.basic.ILogicCell;
-import com.linkstec.bee.core.fw.basic.IUnitCell;
 import com.linkstec.bee.core.fw.editor.BProject;
 import com.linkstec.bee.core.fw.logic.BAssignment;
 import com.linkstec.bee.core.fw.logic.BInvoker;
@@ -54,6 +56,9 @@ public class BasicGenUtils {
 	public static final String STATIC_CALL = "STATIC_CALL";
 
 	public static BeeModel createClass(BActionModel action, BProject project) {
+		if (project == null) {
+			project = Application.getInstance().getCurrentProject();
+		}
 		ActionModel actionModel = action.getProcessModel();
 		if (actionModel == null) {
 			return null;
@@ -250,15 +255,15 @@ public class BasicGenUtils {
 	}
 
 	public static String getInputDtoInstanceName(BVariable var, String methodLogicName) {
-		return var.getLogicName() + "in" + methodLogicName.toLowerCase();
+		return var.getLogicName() + "In" + methodLogicName;
 	}
 
 	public static String getOutputDtoInstanceName(BVariable var, String methodLogicName) {
-		return var.getLogicName() + "out" + methodLogicName.toLowerCase();
+		return var.getLogicName() + "Out" + methodLogicName;
 	}
 
 	public static String getOutputDtoInstanceName(String varName, String methodLogicName) {
-		return varName + "out" + methodLogicName.toLowerCase();
+		return varName + "Out" + methodLogicName;
 	}
 
 	public static String makeName(String name) {
@@ -276,22 +281,48 @@ public class BasicGenUtils {
 		return tableName;
 	}
 
-	public static BAssignment createInstance(BClass bclass) {
+	public static BAssignment createInstance(BClass bclass, BLogicProvider provider) {
 
 		BVariable value = view.createVariable();
 		value.setBClass(bclass);
 		value.setLogicName(bclass.getLogicName());
 		value.setNewClass(true);
 
-		return createInstanceWidthValue(bclass, value);
+		return createInstanceWidthValue(bclass, value, provider);
 	}
 
-	public static BAssignment createInstanceWidthValue(BClass bclass, BValuable value) {
+	public static BAssignment createInstanceWidthValue(BClass bclass, BValuable value, BLogicProvider provider) {
 		BAssignment var = view.createAssignment();
 		BParameter left = view.createParameter();
 		left.setBClass(bclass);
-		left.setLogicName(BasicNaming.getVarName(bclass));
-		left.setName(bclass.getName() + "インスタンス作成");
+
+		String name = bclass.getLogicName();
+
+		if (name.length() > 2) {
+			name = name.substring(0, 2).toLowerCase() + name.substring(2);
+			left.setLogicName(name);
+			left.setName(name);
+		} else {
+			left.setLogicName(BasicNaming.getVarName(bclass));
+			left.setName(bclass.getName() + "インスタンス作成");
+		}
+
+		if (provider == null) {
+			Thread t = Thread.currentThread();
+			if (t instanceof BeeThread) {
+				BeeThread b = (BeeThread) t;
+				provider = (BLogicProvider) b.getUserAttribute("PROVIDER");
+			}
+		}
+
+		if (provider != null) {
+			String n = provider.getVariableName(left, null);
+			if (n != null) {
+				left.setLogicName(n);
+				left.setName(n);
+			}
+		}
+
 		var.setLeft(left);
 		var.setRight(value, null);
 		return var;
@@ -307,13 +338,7 @@ public class BasicGenUtils {
 			IBodyCell node = (IBodyCell) start;
 			BLogic g = node.getLogic();
 			if (g != null) {
-				// if (withGroupTitle) {
-				//
-				// g.addUserAttribute("START", "START");
-				// list.add(g);
-				//
-				// }
-				/////////////////
+
 				BGroupLogic logic = new BGroupLogic(null);
 				logic.addUserAttribute("START", "START");
 				logic.setPath(g.getPath());
@@ -331,23 +356,6 @@ public class BasicGenUtils {
 				list.add(logic);
 				//////////////////////
 
-				// if (withGroupTitle) {
-				// g = (BLogic) ObjectFileUtils.deepCopy(g);
-				// if (g != null) {
-				// g.removeUserAttribute("START");
-				// g.addUserAttribute("END", "END");
-				// list.add(g);
-				// }
-				//
-				// }
-			}
-
-		} else if (start instanceof IUnitCell) {
-			IUnitCell unit = (IUnitCell) start;
-			BLogic logic = unit.getLogic();
-			if (logic != null) {
-				logic.getPath().setCell(unit);
-				list.add(logic);
 			}
 
 		} else if (start instanceof ILogicCell) {
@@ -357,8 +365,13 @@ public class BasicGenUtils {
 				logic.getPath().setCell(end);
 				list.add(logic);
 			}
+			forTest(end);
 		}
 		makeLogics(BasicGenUtils.getNext((BNode) start, start.getLogic().getPath()), list, withGroupTitle);
+
+	}
+
+	public static void forTest(ILogicCell cell) {
 
 	}
 
@@ -450,7 +463,11 @@ public class BasicGenUtils {
 					if (target instanceof ILogicCell) {
 						ILogicCell logic = (ILogicCell) target;
 						logic.getLogic().getPath().setParent(parent);
+						logic.getLogic().getPath().setCell(logic);
 						cells.add(logic);
+
+						forTest(logic);
+
 					}
 				}
 			}
@@ -538,6 +555,13 @@ public class BasicGenUtils {
 	public static void injectConsumer(Object cell, List<Comsumer> list, BMethod scope, BClass comsumerClass) {
 		if (cell instanceof BInvoker) {
 			BInvoker invoker = (BInvoker) cell;
+
+			// if (invoker.getUserAttribute("PARENT_FIXED_INVOKER") != null) {
+			// System.out.println(BValueUtils.createValuable(invoker, true));
+			// System.out.println(BValueUtils.createValuable(invoker, false));
+			// Debug.a();
+			// return;
+			// }
 			BValuable value = invoker.getInvokeParent();
 			if (value != null) {
 				Object obj = value.getUserAttribute(BasicGenUtils.INVOKER_SOURCE);
@@ -560,13 +584,15 @@ public class BasicGenUtils {
 		consumer.setScope(scope);
 		consumer.setCell(cell);
 		consumer.setComsumerClass(comsumer);
-		List<BParameter> params = scope.getParameter();
-		for (int i = 0; i < params.size(); i++) {
-			BParameter para = params.get(i);
-			if (para.getBClass().isData()) {
-				// look up for first one
-				consumer.setParameter(para);
-				break;
+		if (scope != null) {
+			List<BParameter> params = scope.getParameter();
+			for (int i = 0; i < params.size(); i++) {
+				BParameter para = params.get(i);
+				if (para.getBClass().isData()) {
+					// look up for first one
+					consumer.setParameter(para);
+					break;
+				}
 			}
 		}
 		return consumer;
@@ -621,6 +647,30 @@ public class BasicGenUtils {
 								producer.setScope(scope);
 								producer.setTarget(target);
 								producer.setLocation(index);
+
+								BAssignment a = findInputDto(scope, index);
+
+								if (a == null) {
+									List<BValuable> params = target.getParameters();
+									for (BValuable pa : params) {
+										if (pa.getBClass().isData()) {
+											// find first one
+
+											BParameter para = (BParameter) pa.cloneAll();
+											para.setCaller(true);
+											para.setClass(false);
+											para.addUserAttribute("PARENT_HASH_CODE", pa.hashCode());
+											producer.setTargetTransferParameter(para);
+											break;
+										}
+									}
+								} else {
+									BParameter para = (BParameter) a.getLeft().cloneAll();
+									para.setCaller(true);
+									para.setClass(false);
+									para.addUserAttribute("PARENT_HASH_CODE", a.getLeft().hashCode());
+									producer.setTargetTransferParameter(para);
+								}
 								return producer;
 							}
 						}
@@ -648,16 +698,15 @@ public class BasicGenUtils {
 		for (int i = 0; i < count; i++) {
 			mxICell child = parent.getChildAt(i);
 
-			BParameter value = null;
-			if (child instanceof BParameter) {
-				// BParameter p=(BParameter) child;
-
-				value = (BParameter) child;
+			BVariable value = null;
+			if (child instanceof BVariable) {
+				value = (BVariable) child;
 			} else if (child instanceof BAssignment) {
 				BAssignment assign = (BAssignment) child;
 				value = assign.getLeft();
 			} else if (child instanceof ObjectNode) {
 				ObjectNode node = (ObjectNode) child;
+
 				Producer producer = findProducer(node, comsumer, scope);
 				if (producer != null) {
 					return producer;
@@ -668,7 +717,9 @@ public class BasicGenUtils {
 
 				if (p instanceof TransferCell) {
 					TransferCell t = (TransferCell) p;
+
 					if (t.getPathKey() == comsumer.getCell().getPathKey()) {
+
 						if (scope != null) {
 							Producer producer = BasicGenUtils.findTargetProducer(scope, comsumer, value);
 							if (producer != null) {
@@ -679,6 +730,8 @@ public class BasicGenUtils {
 									return producer;
 								}
 							}
+						} else {
+							Debug.a();
 						}
 					}
 				}
@@ -699,7 +752,7 @@ public class BasicGenUtils {
 		return null;
 	}
 
-	private static Producer findNesScopeAndProducer(mxICell parent, Comsumer comsumer, BParameter value) {
+	private static Producer findNesScopeAndProducer(mxICell parent, Comsumer comsumer, BVariable value) {
 		int count = parent.getChildCount();
 		// BPath path = comsumer.getProducerPath();
 
@@ -719,12 +772,13 @@ public class BasicGenUtils {
 		return null;
 	}
 
-	private static Producer findTargetProducer(BLogicBody body, Comsumer comsumer, BParameter value) {
+	private static Producer findTargetProducer(BLogicBody body, Comsumer comsumer, BVariable value) {
 		List<BLogicUnit> units = body.getUnits();
 		for (int index = 0; index < units.size(); index++) {
 			BLogicUnit u = units.get(index);
 			if (u instanceof BAssignment) {
 				BAssignment assing = (BAssignment) u;
+				BParameter left = assing.getLeft();
 				BValuable right = assing.getRight();
 				if (right instanceof BInvoker) {
 					BInvoker target = (BInvoker) right;
@@ -744,18 +798,26 @@ public class BasicGenUtils {
 					if (match) {
 						Producer producer = new Producer();
 						producer.setScope(body);
-						producer.setProducerTransferParameter((BParameter) value.cloneAll());
+						producer.setProducerTransferParameter((BVariable) value.cloneAll());
 						producer.setTargetTranferData((BVariable) comsumer.getTarget().getInvokeChild());
 						producer.setTarget(target);
 						producer.setLocation(index);
+						producer.setAltiveTargetTransferParameter(left);
 
 						BAssignment a = findInputDto(body, index);
+
 						if (a == null) {
 							List<BValuable> params = target.getParameters();
-							for (BValuable para : params) {
-								if (para.getBClass().isData()) {
+							for (BValuable pa : params) {
+								if (pa.getBClass().isData()) {
 									// find first one
-									producer.setTargetTransferParameter((BParameter) para);
+
+									BParameter para = (BParameter) pa.cloneAll();
+									para.setCaller(true);
+									para.setClass(false);
+									para.addUserAttribute("PARENT_HASH_CODE", pa.hashCode());
+									producer.setTargetTransferParameter(para);
+
 									break;
 								}
 							}
@@ -763,6 +825,7 @@ public class BasicGenUtils {
 							BParameter para = (BParameter) a.getLeft().cloneAll();
 							para.setCaller(true);
 							para.setClass(false);
+							para.addUserAttribute("PARENT_HASH_CODE", a.getLeft().hashCode());
 							producer.setTargetTransferParameter(para);
 						}
 
@@ -777,13 +840,28 @@ public class BasicGenUtils {
 	public static BAssignment findInputDto(BLogicBody body, int bottom) {
 		List<BLogicUnit> units = body.getUnits();
 
-		for (int index = bottom; index >= 0; index--) {
+		for (int index = bottom - 1; index >= 0; index--) {
 			BLogicUnit u = units.get(index);
 			if (u instanceof BAssignment) {
+				BAssignment assign = (BAssignment) u;
 				if (u.getUserAttribute("INPUT_DTO") != null) {
+
 					return (BAssignment) u;
 				}
+
+				// break when go and got previous invoker(layer)
+				BValuable value = assign.getRight();
+				if (value instanceof BInvoker) {
+					BInvoker bin = (BInvoker) value;
+					if (bin.getInvokeChild().getUserAttribute("PATH_ID") != null) {
+						// BAssignment b = (BAssignment) units.get(bottom);
+
+						Debug.a();
+						break;
+					}
+				}
 			}
+
 		}
 		return null;
 	}
@@ -853,22 +931,29 @@ public class BasicGenUtils {
 	}
 
 	public static class Producer implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -254356984142318395L;
+
 		private BLogicBody scope;
 
 		// the consumer instance class
 		private BInvoker target;
 
 		// to invoke the consumer,use the parameter,
-		private BParameter targetTransferParameter;
+		private BVariable targetTransferParameter;
 
 		// the parameter catch the data to be transferred
-		private BParameter producerTransferParameter;
+		private BVariable producerTransferParameter;
 
 		// the location the setter should be inserted(targetPosition)
 		private int location;
 
 		// target data to be transfer
 		private BVariable targetTranferData;
+
+		private BVariable altiveTargetTransferParameter;
 
 		// targetTransferParameter.set[targetTranferData](producerTransferParameter.get[targetTranferData]())
 
@@ -880,8 +965,16 @@ public class BasicGenUtils {
 			return producerTransferParameter;
 		}
 
-		public void setProducerTransferParameter(BParameter producerTransferParameter) {
+		public void setProducerTransferParameter(BVariable producerTransferParameter) {
 			this.producerTransferParameter = producerTransferParameter;
+		}
+
+		public BVariable getAltiveTargetTransferParameter() {
+			return altiveTargetTransferParameter;
+		}
+
+		public void setAltiveTargetTransferParameter(BVariable altiveTargetTransferParameter) {
+			this.altiveTargetTransferParameter = altiveTargetTransferParameter;
 		}
 
 		public void setTargetTranferData(BVariable targetTranferData) {
@@ -912,11 +1005,11 @@ public class BasicGenUtils {
 			this.target = target;
 		}
 
-		public BParameter getTargetTransferParameter() {
+		public BVariable getTargetTransferParameter() {
 			return targetTransferParameter;
 		}
 
-		public void setTargetTransferParameter(BParameter targetTransferParameter) {
+		public void setTargetTransferParameter(BVariable targetTransferParameter) {
 			this.targetTransferParameter = targetTransferParameter;
 		}
 
@@ -1065,6 +1158,7 @@ public class BasicGenUtils {
 			cellChild.setBClass(var.getBClass());
 			cellChild.setName(var.getName());
 			cellChild.setLogicName(var.getLogicName());
+			cellChild.setCaller(var.isCaller());
 			return cellChild;
 		}
 	}

@@ -32,7 +32,7 @@ public class BIOActionNode extends BNode {
 	}
 
 	@Override
-	public void paintBefore(Graphics g, mxCellState state) {
+	public void paintBefore(Graphics g, mxCellState state, double scale) {
 		if (model != null) {
 			mxRectangle box = state.getBoundingBox();
 			Rectangle rect = box.getRectangle();
@@ -42,7 +42,7 @@ public class BIOActionNode extends BNode {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 		if (model != null) {
 			mxRectangle box = state.getBoundingBox();
 			Rectangle rect = box.getRectangle();

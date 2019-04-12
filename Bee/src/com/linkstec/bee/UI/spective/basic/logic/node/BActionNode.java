@@ -84,6 +84,27 @@ public class BActionNode extends BNode {
 		return null;
 	}
 
+	@Override
+	public Object getValue() {
+
+		return super.getValue();
+	}
+
+	@Override
+	public int getChildCount() {
+
+		int count = super.getChildCount();
+		int index = 0;
+		for (int i = 0; i < count; i++) {
+			mxICell child = this.getChildAt(i);
+			if (child instanceof BActionPropertyNode) {
+				index++;
+			}
+		}
+
+		return index;
+	}
+
 	public BActionPropertyNode getProperty() {
 		if (this.getChildCount() == 1) {
 			mxICell s = this.getChildAt(0);

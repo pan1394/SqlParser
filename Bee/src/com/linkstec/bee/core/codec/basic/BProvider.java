@@ -169,6 +169,12 @@ public class BProvider extends BLogicProvider {
 				return BProvider.this;
 			}
 
+			@Override
+			public List<BInvoker> getSelectInfos() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
 		};
 
 		String template = "D:/beny/export/template5.xlsx";

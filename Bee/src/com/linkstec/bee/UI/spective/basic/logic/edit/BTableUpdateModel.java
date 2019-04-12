@@ -24,21 +24,4 @@ public class BTableUpdateModel extends BTableModel {
 		return c;
 	}
 
-	// public List<BLogicUnit> getSetterLogics() {
-	// mxICell root = ((mxICell) this.getRoot()).getChildAt(0);
-	// int count = root.getChildCount();
-	// for (int i = 0; i < count; i++) {
-	//
-	// mxICell obj = root.getChildAt(i);
-	// if (obj instanceof BTableNode) {
-	// BTableNode node = (BTableNode) obj;
-	// BLogic logic = node.getLogic();
-	// if (logic != null) {
-	// return logic.createUnit();
-	// }
-	// }
-	// }
-	// return null;
-	// }
-
 }

@@ -111,12 +111,14 @@ public class BTableTargetTablesNode extends BTableGroupNode {
 				if (parentName != null) {
 					name = parentName + name;
 				}
-				node.getModel(models).setLogicName(name);
-				node.getModel(models).setName(name);
+				if (node.getAsParamLogicName() == null) {
+					node.getModel(models).setLogicName(name);
+					node.getModel(models).setName(name);
+				}
 				isNode = true;
 			} else if (child instanceof BTableNesSelectNode) {
 				BTableNesSelectNode node = (BTableNesSelectNode) child;
-				String name = names[index];
+				String name = generateName(index);
 				if (parentName != null) {
 					name = parentName + name;
 				}
@@ -145,11 +147,27 @@ public class BTableTargetTablesNode extends BTableGroupNode {
 		this.fitHeight();
 	}
 
+	public String generateName(int index) {
+		if (index < names.length) {
+			String s = names[index];
+			return s;
+		} else {
+			int re = index % names.length;
+			int num = index / names.length;
+			String s = names[re];
+			String name = "";
+			for (int i = 0; i < num; i++) {
+				name = name + s;
+			}
+			return name;
+		}
+	}
+
 	@Override
 	public String getSQL(ITableSql tsql) {
 		boolean format = tsql.isFormat();
 		List<BTableConnectWhereNode> joins = this.getJoins();
-		String from = "FROM ";
+		String from = this.getSqlTitle();
 		String space = " ";
 		if (format) {
 			space = "";
@@ -204,11 +222,19 @@ public class BTableTargetTablesNode extends BTableGroupNode {
 		return from;
 	}
 
+	protected String getSqlTitle() {
+		return "FROM ";
+	}
+
+	protected String getSqlTitleExp() {
+		return "検索テーブル：";
+	}
+
 	@Override
 	public String getSQLExp(ITableSql tsql) {
 		boolean format = tsql.isFormat();
 		List<BTableConnectWhereNode> joins = this.getJoins();
-		String from = "検索テーブル：";
+		String from = this.getSqlTitleExp();
 		String space = " ";
 		if (format) {
 			space = "";

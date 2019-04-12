@@ -7,6 +7,7 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.util.BValueUtils;
 import com.linkstec.bee.core.codec.util.CodecUtils;
+import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IPatternCreator;
@@ -114,6 +115,8 @@ public class BFixedInputValueNode extends BFixedValueNode {
 		}
 
 		if (editedValue != null) {
+
+			editedValue.addUserAttribute("FIXED_INPUT_VALUE_NAME", invoker.getInvokeChild());
 			invoker.addParameter(editedValue);
 		} else {
 			invoker.addParameter(CodecUtils.getNullValue());
@@ -124,6 +127,16 @@ public class BFixedInputValueNode extends BFixedValueNode {
 	@Override
 	public String getSQL(ITableSql tsql) {
 		return SQLMakeUtils.getInjectValue((BVariable) invoker.getInvokeChild(), null);
+	}
+
+	@Override
+	public BVariable getListTargetVar() {
+		return (BVariable) this.invoker.getInvokeParent();
+	}
+
+	@Override
+	public void onListTargetChange(BParameter var) {
+		this.invoker.setInvokeChild((BValuable) var.cloneAll());
 	}
 
 }

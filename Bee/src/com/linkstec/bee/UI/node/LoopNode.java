@@ -172,8 +172,13 @@ public class LoopNode extends BasicNode implements Serializable, IUnit, BLoopUni
 
 	@Override
 	public BValuable getCondition() {
-		BasicNode node = (BasicNode) getConditionNode().getChildAt(0);
-		return LayoutUtils.getValueNode(node);
+		BasicNode c = this.getConditionNode();
+		if (c.getChildCount() > 0) {
+			BasicNode node = (BasicNode) c.getChildAt(0);
+			return LayoutUtils.getValueNode(node);
+		} else {
+			return null;
+		}
 
 	}
 

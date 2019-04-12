@@ -472,7 +472,12 @@ public class AssignmentNode extends BasicNode implements Serializable, IClassMem
 			}
 
 		} else {
-			((BasicNode) this.getCellByBID(valueBID)).replace((mxCell) right);
+			BasicNode b = ((BasicNode) this.getCellByBID(valueBID));
+			if (b == null) {
+
+			} else {
+				b.replace((mxCell) right);
+			}
 		}
 		this.setValueAssignment(logiker);
 	}

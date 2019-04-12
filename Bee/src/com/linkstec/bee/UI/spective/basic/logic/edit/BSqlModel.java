@@ -18,6 +18,7 @@ public class BSqlModel implements ITableSql {
 	private List<BEditorModel> editors;
 	private List<BInvoker> invokers = new ArrayList<BInvoker>();
 	private List<BInvoker> inputValues = new ArrayList<BInvoker>();
+	private List<BInvoker> selects = new ArrayList<BInvoker>();
 	private boolean format;
 	private BLogicProvider provider;
 
@@ -138,6 +139,11 @@ public class BSqlModel implements ITableSql {
 	@Override
 	public BLogicProvider getProvider() {
 		return this.provider;
+	}
+
+	@Override
+	public List<BInvoker> getSelectInfos() {
+		return this.selects;
 	}
 
 }

@@ -66,12 +66,19 @@ public class ExcelExport implements IExcelExport {
 			}
 		}
 
+		for (BClass bclass : models) {
+			if (bclass.getLogicName().endsWith("LogicImpl")) {
+				mainClass = bclass;
+				break;
+			}
+		}
+
 		if (mainClass != null) {
 			String mainClassName = mainClass.getLogicName();
 			String mainSheetName = mainClassName.substring(0, mainClassName.length() - 4);
 			String batchId = mainClassName.substring(0, mainClassName.length() - 14);
 			String batchName = mainClass.getName();
-			int ii = batchName.indexOf("JobService");
+			int ii = batchName.indexOf(Constants.ServiceName);
 			if (ii > 0) {
 				batchName = batchName.substring(0, ii);
 			}
@@ -86,7 +93,7 @@ public class ExcelExport implements IExcelExport {
 					target = bclass;
 				}
 			}
-			if (target != null) {
+			if (target != null && sqlSet != null) {
 				Sheet sqlSheet = this.createSheet(workBook, ExcelTemplate.TEMPLATE_NAME + "_SQL",
 						ExcelTemplate.TEMPLATE_NAME + "_" + target.getLogicName());
 				ExcelSqlSheet.createSQL(module, project, style, sqlSheet, sqlSet, sql);
@@ -101,12 +108,12 @@ public class ExcelExport implements IExcelExport {
 			new ExcelProcess(project, mainClass, sheet, style, doInvoker, doStatic);
 
 			String name = mainClass.getName();
-			int index = name.indexOf("JobService");
+			int index = name.indexOf(Constants.ServiceName);
 			if (index > 0) {
 				name = name.substring(0, index);
 			}
 
-			String filename = "(" + name + ")バッチ単体ケースデータタ .xlsx";
+			String filename = "(" + name + ")ケースデータ.xlsx";
 
 			String path = finalXlsxFile.getParentFile().getAbsolutePath();
 			File dir = new File(path);

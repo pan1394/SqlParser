@@ -19,7 +19,7 @@ public class BTableRowCellNode extends BNode {
 		this.setVertex(true);
 		this.getGeometry().setRelative(true);
 		this.getGeometry().setWidth(width);
-		this.getGeometry().setHeight(BeeConstants.LINE_HEIGHT);
+		this.getGeometry().setHeight(BeeConstants.LINE_HEIGHT * 2);
 		if (value instanceof BParameter) {
 			this.target = (BParameter) value;
 		} else {

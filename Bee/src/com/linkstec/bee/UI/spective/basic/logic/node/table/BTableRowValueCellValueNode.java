@@ -11,6 +11,7 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BTansferHolderNode;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
+import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.basic.BLogic;
@@ -64,6 +65,10 @@ public class BTableRowValueCellValueNode extends BNode implements ILogicCell {
 			}
 		}
 		node.removeFromParent();
+	}
+
+	public BValuable getSetterParam() {
+		return setterParam;
 	}
 
 	@Override
@@ -124,10 +129,15 @@ public class BTableRowValueCellValueNode extends BNode implements ILogicCell {
 		if (setterParam == null) {
 			return "nullを設定する";
 		}
-		String s = SQLMakeUtils.getValueText(setterParam, false);
+		if (setterParam.getBClass() == null) {
+			setterParam = CodecUtils.getNullValue();
+			return "nullを設定する";
+		}
+		String s = SQLMakeUtils.getValueText(setterParam, false, null);
 
 		if (setterParam instanceof BVariable) {
 			BVariable var = (BVariable) setterParam;
+
 			s = s + "[" + var.getBClass().getName() + "]";
 		}
 		s = s + "を設定する";
@@ -150,6 +160,11 @@ public class BTableRowValueCellValueNode extends BNode implements ILogicCell {
 	}
 
 	public BInvoker getTransferLogic() {
+		BParameter maybechangedValue = (BParameter) this.getLogic().getPath().getProvider().getProperties()
+				.getThreadScopeAttribute("TABLE_LIST_PARENT_PARAMTER");
+		if (maybechangedValue != null) {
+			this.setter.setInvokeParent((BValuable) maybechangedValue.cloneAll());
+		}
 		BInvoker invoker = (BInvoker) this.setter.cloneAll();
 		BValuable para = (BValuable) setterParam.cloneAll();
 

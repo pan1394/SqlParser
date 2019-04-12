@@ -793,6 +793,8 @@ public class BeeGraphSheet extends mxGraphComponent
 	public void makeTabPopupItems(BManager manager) {
 		manager.addPopupItem("ソースへ変換", BeeConstants.GENERATE_CODE_ICON,
 				new CodecAction.GenerateSourceSingle(this.getFile(), this.project));
+		manager.addPopupItem("Testcase doc generate", BeeConstants.GENERATE_CODE_ICON,
+				new CodecAction.GenerateTestCase(this.findBook().getBookModel(), this.project));
 	}
 
 	@Override

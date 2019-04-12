@@ -55,11 +55,11 @@ public class ExpressionLogic extends JudgeLogic {
 
 	@Override
 	public String getDesc() {
-		return "計算処理";
+		return BValueUtils.createValuable(this.getExpression(null), false);
 	}
 
 	@Override
-	public BExpression getExpression(ITableSql tsql) {
+	public BValuable getExpression(ITableSql tsql) {
 		IPatternCreator view = PatternCreatorFactory.createView();
 		BExpression ex = view.createExpression();
 
@@ -71,7 +71,7 @@ public class ExpressionLogic extends JudgeLogic {
 
 			if (l != null) {
 				ex.setExMiddle(l);
-				ex.setExRight(value);
+				ex.setExRight((BValuable) value.cloneAll());
 
 				if (tsql != null) {
 					if (!l.getLogicName().equals(BLogiker.EQUAL.getLogicName())) {
@@ -82,13 +82,13 @@ public class ExpressionLogic extends JudgeLogic {
 				BExpression old = ex;
 
 				ex = view.createExpression();
-				ex.setExLeft(old);
+				ex.setExLeft((BValuable) old.cloneAll());
 			} else {
-				ex.setExLeft(value);
+				ex.setExLeft((BValuable) value.cloneAll());
 			}
 		}
 		if (ex.getExRight().getBClass() == null) {
-			return (BExpression) ex.getExLeft();
+			return ex.getExLeft();
 		}
 		return ex;
 	}
@@ -97,6 +97,9 @@ public class ExpressionLogic extends JudgeLogic {
 
 	@Override
 	public JComponent getEditor() {
+		if (list == null) {
+			return null;
+		}
 		JPanel panel = new JPanel();
 		panel.setOpaque(false);
 		FlowLayout flow = new FlowLayout();
@@ -131,8 +134,21 @@ public class ExpressionLogic extends JudgeLogic {
 			}
 
 			BValuable in = (BValuable) invoker;
-			JLabel label = new JLabel(BValueUtils.createValuable(in, false));
-			panel.add(label);
+			if (in.getUserAttribute("FIXED") != null) {
+				ValueEditor editor = new ValueEditor("", index, new ValueChangeListener() {
+
+					@Override
+					public void changed(String messageID, int index, BValuable value) {
+						list.remove(index);
+						list.add(index, value);
+					}
+
+				});
+				panel.add(editor);
+			} else {
+				JLabel label = new JLabel(BValueUtils.createValuable(in, false));
+				panel.add(label);
+			}
 
 			index++;
 		}

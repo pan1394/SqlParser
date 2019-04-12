@@ -23,7 +23,7 @@ public class BasicCanvas extends mxInteractiveCanvas {
 
 			Font font = mxUtils.getFont(style, this.getScale());
 			g.setFont(font);
-			node.paintBefore(g, state);
+			node.paintBefore(g, state, this.getScale());
 
 			g.dispose();
 			g = previousGraphics;
@@ -39,7 +39,7 @@ public class BasicCanvas extends mxInteractiveCanvas {
 			g = createTemporaryGraphics(style, 100, null);
 			Font font = mxUtils.getFont(style, this.getScale());
 			g.setFont(font);
-			node.paint(g, state);
+			node.paint(g, state, this.getScale());
 
 			g.dispose();
 			g = previousGraphics;

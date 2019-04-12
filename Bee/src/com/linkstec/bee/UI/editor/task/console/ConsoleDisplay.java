@@ -158,7 +158,7 @@ public class ConsoleDisplay extends TaskPane implements HyperlinkListener, Actio
 					doc.insertBeforeEnd(body, s);
 
 					int count = body.getElementCount();
-					if (count > 250) {
+					if (count > 450) {
 						Element first = body.getElement(0);
 						try {
 							doc.removeElement(first);
@@ -181,6 +181,7 @@ public class ConsoleDisplay extends TaskPane implements HyperlinkListener, Actio
 	}
 
 	public void clear() {
+
 		pane.setText(header + footer);
 		offset = header.length();
 		cleard = true;

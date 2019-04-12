@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
+import com.linkstec.bee.core.codec.util.BValueUtils;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BValuable;
@@ -52,7 +53,7 @@ public class VarValueCheckLogic extends VarCheckLogic {
 		if (target == null) {
 			return "";
 		}
-		return target.getName() + "の値チェック";
+		return BValueUtils.createValuable(this.getExpression(null), false);
 	}
 
 	public BLogiker getSelected() {
@@ -80,7 +81,10 @@ public class VarValueCheckLogic extends VarCheckLogic {
 	}
 
 	@Override
-	protected BExpression getExpression(ITableSql tsql) {
+	public BExpression getExpression(ITableSql tsql) {
+		if (selected == null) {
+			return null;
+		}
 		IPatternCreator view = PatternCreatorFactory.createView();
 		BExpression ex = view.createExpression();
 		ex.setExLeft(var);
@@ -211,49 +215,58 @@ public class VarValueCheckLogic extends VarCheckLogic {
 		ValueChangeListener listener = new ValueChangeListener() {
 			@Override
 			public void changed(String name, int index, BValuable v) {
-				value = v;
-				if (name.equals(BLogiker.BETWEE.getLogicName())) {
-					betweenValues.remove(index);
-					betweenValues.add(index, value);
-				} else if (name.equals(BLogiker.NOTBETWEE.getLogicName())) {
-					notbetweenValues.remove(index);
-					notbetweenValues.add(index, value);
-				} else if (name.equals(BLogiker.IN.getLogicName())) {
-					inValues.remove(index);
-					inValues.add(index, value);
-
-					boolean filled = true;
-					for (BValuable bv : inValues) {
-						if (bv.getBClass().getLogicName().equals(BClass.NULL)) {
-							filled = false;
-							break;
-						}
-					}
-					if (filled) {
-						makeEditor(panel, name, inValues.size());
-						panel.updateUI();
-					}
-				} else if (name.equals(BLogiker.NOTIN.getLogicName())) {
-					notinValues.remove(index);
-					notinValues.add(index, value);
-
-					boolean filled = true;
-					for (BValuable bv : notinValues) {
-						if (bv.getBClass().getLogicName().equals(BClass.NULL)) {
-							filled = false;
-							break;
-						}
-					}
-					if (filled) {
-						makeEditor(panel, name, notinValues.size());
-						panel.updateUI();
-					}
-				}
+				setValue(name, v, index, panel);
 			}
 		};
-		ValueEditor text = new ValueEditor(name, index, listener);
+		ValueEditor text = new ValueEditor(name, index, null);
+		if (this.value != null) {
+			text.setValue(value);
+			text.setDisplayName(BValueUtils.createValuable(value, false));
+		}
+		text.setListener(listener);
 		panel.add(text);
 
+	}
+
+	private void setValue(String name, BValuable v, int index, JPanel panel) {
+		value = v;
+		if (name.equals(BLogiker.BETWEE.getLogicName())) {
+			betweenValues.remove(index);
+			betweenValues.add(index, value);
+		} else if (name.equals(BLogiker.NOTBETWEE.getLogicName())) {
+			notbetweenValues.remove(index);
+			notbetweenValues.add(index, value);
+		} else if (name.equals(BLogiker.IN.getLogicName())) {
+			inValues.remove(index);
+			inValues.add(index, value);
+
+			boolean filled = true;
+			for (BValuable bv : inValues) {
+				if (bv.getBClass().getLogicName().equals(BClass.NULL)) {
+					filled = false;
+					break;
+				}
+			}
+			if (filled) {
+				makeEditor(panel, name, inValues.size());
+				panel.updateUI();
+			}
+		} else if (name.equals(BLogiker.NOTIN.getLogicName())) {
+			notinValues.remove(index);
+			notinValues.add(index, value);
+
+			boolean filled = true;
+			for (BValuable bv : notinValues) {
+				if (bv.getBClass().getLogicName().equals(BClass.NULL)) {
+					filled = false;
+					break;
+				}
+			}
+			if (filled) {
+				makeEditor(panel, name, notinValues.size());
+				panel.updateUI();
+			}
+		}
 	}
 
 }

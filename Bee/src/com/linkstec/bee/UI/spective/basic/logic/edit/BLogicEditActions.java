@@ -180,6 +180,12 @@ public class BLogicEditActions {
 			returnType = ReturnType.SINGLE_RETURN;
 			action.setReturnType(returnType);
 		}
+		// logic.getPath().addUserAttribute("NES_SELECT", "NES_SELECT");
+		Object select = path.getUserAttribute("NES_SELECT");
+		if (select != null) {
+			returnType = ReturnType.SINGLE_RETURN;
+			path.removeUserAttribute("NES_SELECT");
+		}
 
 		// find model
 		BPatternModel model = null;

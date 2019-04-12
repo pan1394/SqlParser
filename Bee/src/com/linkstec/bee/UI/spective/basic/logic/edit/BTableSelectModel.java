@@ -18,11 +18,6 @@ public class BTableSelectModel extends BTableModel {
 	 */
 	private static final long serialVersionUID = 9066130710125450760L;
 
-	private String[] names = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
-			"S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "BB", "CC", "DD", "EE", "FF", "GG", "HH", "II", "JJ", "KK",
-			"LL", "MM", "NN", "OO", "PP", "QQ", "RR", "SS", "TT", "UU", "VV", "WW", "XX", "YY", "ZZ" };
-
-	private int parentNameGeneIndex = 0;
 	private String parentName;// AS A,B etc
 
 	public BTableSelectModel(BPath action) {
@@ -35,23 +30,6 @@ public class BTableSelectModel extends BTableModel {
 
 	public void setParentName(String parentName) {
 		this.parentName = parentName;
-	}
-
-	public String generaParentName() {
-		if (parentNameGeneIndex < names.length) {
-			String s = names[parentNameGeneIndex];
-			parentNameGeneIndex++;
-			return s;
-		} else {
-			int re = parentNameGeneIndex % names.length;
-			int num = parentNameGeneIndex / names.length;
-			String s = names[re];
-			String name = "";
-			for (int i = 0; i < num; i++) {
-				name = name + s;
-			}
-			return name;
-		}
 	}
 
 	public List<BTableValueNode> getSelectTargets() {

@@ -103,8 +103,7 @@ public class BEditorManager implements BManager, BeeTabPop, BeeTabClosingListene
 
 		int pages = (int) (imageHeigt / f.getHeight()) + 1;
 		String pagesInfo = (pageIndex + 1) + "/" + pages;
-		g.drawString(pagesInfo, ((int) f.getWidth() - metric.stringWidth(pagesInfo)) / 2,
-				(int) f.getHeight() - margin + g.getFontMetrics().getAscent());
+		g.drawString(pagesInfo, ((int) f.getWidth() - metric.stringWidth(pagesInfo)) / 2, (int) f.getHeight() - margin + g.getFontMetrics().getAscent());
 
 		if (pageIndex * f.getHeight() < imageHeigt) {
 			Application.getInstance().getEditor().getStatusBar().setMessag(pagesInfo + "ページ目を印刷しています…");
@@ -158,9 +157,7 @@ public class BEditorManager implements BManager, BeeTabPop, BeeTabClosingListene
 			return true;
 		}
 
-		int isDelete = JOptionPane.showConfirmDialog(Application.FRAME,
-				editor.getLogicName() + "は修正されています。保存してクローズしますか？", "確認", JOptionPane.YES_NO_CANCEL_OPTION,
-				JOptionPane.WARNING_MESSAGE, BeeConstants.WARNING_ICON);
+		int isDelete = JOptionPane.showConfirmDialog(Application.FRAME, editor.getLogicName() + "は修正されています。保存してクローズしますか？", "確認", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, BeeConstants.WARNING_ICON);
 		if (isDelete == JOptionPane.YES_OPTION) {
 			editor.save();
 			BOutLook outlook = this.editor.getOutlookExplore();

@@ -22,7 +22,7 @@ public class BFiexedReturnValueNode extends BFixedValueNode {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 		Rectangle rect = state.getRectangle();
 		FontMetrics mericts = g.getFontMetrics();
 		int height = mericts.getHeight();

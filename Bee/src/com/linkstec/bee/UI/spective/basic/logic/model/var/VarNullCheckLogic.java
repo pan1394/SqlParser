@@ -43,7 +43,7 @@ public class VarNullCheckLogic extends VarCheckLogic {
 	}
 
 	@Override
-	protected BValuable getExpression(ITableSql tsql) {
+	public BValuable getExpression(ITableSql tsql) {
 
 		if (var != null) {
 			IPatternCreator view = PatternCreatorFactory.createView();

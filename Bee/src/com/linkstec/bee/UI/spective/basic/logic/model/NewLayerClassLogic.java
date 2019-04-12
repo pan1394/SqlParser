@@ -13,6 +13,7 @@ import com.linkstec.bee.UI.spective.basic.data.BasicComponentModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BActionModel;
 import com.linkstec.bee.UI.spective.basic.logic.node.BActionPropertyNode;
 import com.linkstec.bee.UI.spective.detail.logic.BeeModel;
+import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.basic.BasicGenUtils;
@@ -25,6 +26,7 @@ import com.linkstec.bee.core.fw.IPatternCreator;
 import com.linkstec.bee.core.fw.basic.BLayerLogic;
 import com.linkstec.bee.core.fw.basic.BLogicProvider;
 import com.linkstec.bee.core.fw.basic.BPath;
+import com.linkstec.bee.core.fw.editor.BProject;
 import com.linkstec.bee.core.fw.logic.BAssignment;
 import com.linkstec.bee.core.fw.logic.BInvoker;
 import com.linkstec.bee.core.fw.logic.BLogicUnit;
@@ -78,6 +80,7 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 	@Override
 	public List<BLogicUnit> createUnit() {
 		BPath path = this.getPath();
+
 		BActionModel action = (BActionModel) path.getAction();
 
 		IPatternCreator view = PatternCreatorFactory.createView();
@@ -86,6 +89,7 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 		BLogicProvider provider = this.getPath().getProvider();
 
 		BClass bclass = BasicGenUtils.createClass(action, this.getPath().getProject());
+		bclass.addUserAttribute("TEMP", "TEMP");
 
 		// invoker
 		BInvoker invoker = view.createMethodInvoker();
@@ -95,6 +99,19 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 
 		// keep info because it may change at provider.getNextLayerActionInstance
 		BMethod old = (BMethod) ObjectFileUtils.deepCopy(method);
+		List<BParameter> paras = this.getParameters();
+		String oldParameterLogicName = null;
+		String oldParameterName = null;
+		for (BParameter para : paras) {
+			BClass b = para.getBClass();
+			if (b.isData()) {
+
+				oldParameterLogicName = para.getLogicName();
+				oldParameterName = para.getName();
+				provider.getProperties().addThreadScopeAttribute("INPUT_PARAMETER_NAME", oldParameterName);
+				provider.getProperties().addThreadScopeAttribute("INPUT_PARAMETER_LOGIC_NAME", oldParameterLogicName);
+			}
+		}
 
 		List<BasicComponentModel> models = new ArrayList<BasicComponentModel>();
 		models.addAll(action.getInputModels());
@@ -103,7 +120,11 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 		provider.getProperties().addThreadScopeAttribute("MODELS", models);
 
 		BNote note = view.createComment();
-		note.setNote(action.getName() + "処理");
+		String name = action.getName();
+		if (!name.endsWith("。")) {
+			name = name + "処理";
+		}
+		note.setNote(name);
 		units.add(note);
 		note.addUserAttribute("DESC", note.getNote());
 
@@ -111,7 +132,8 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 		// new instance for invoker to be parent
 		BAssignment var = provider.getNextLayerActionInstance(bclass, method);
 		if (var == null) {
-			var = BasicGenUtils.createInstance(bclass);
+			Debug.a();
+			var = BasicGenUtils.createInstance(bclass, provider);
 			units.add(var);
 		}
 
@@ -127,14 +149,26 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 			BValuable param = (BValuable) ipara;
 			invoker.addParameter(param);
 		} else {
-			List<BParameter> paras = method.getParameter();
 			for (BParameter para : paras) {
 				BClass b = para.getBClass();
 				if (b.isData()) {
-					BAssignment data = BasicGenUtils.createInstance(b);
+					BAssignment data = BasicGenUtils.createInstance(b, provider);
 					data.addUserAttribute("INPUT_DTO", this.getPath().getUniqueKey());
 					units.add(data);
-					invoker.addParameter((BValuable) data.getLeft().cloneAll());
+
+					BParameter p = data.getLeft();
+					p.addUserAttribute("INPUT_PARAMETER", "INPUT_PARAMETER");
+					this.addMark(p);
+					if (oldParameterLogicName != null) {
+						p.setLogicName(oldParameterLogicName);
+					}
+					if (oldParameterName != null) {
+						p.setName(oldParameterName);
+					}
+					BParameter param = (BParameter) p.cloneAll();
+					param.setClass(false);
+					param.setCaller(true);
+					invoker.addParameter(param);
 				} else if (b.getQualifiedName().equals(List.class.getName())) {
 					Debug.d("TODO");
 				} else {
@@ -148,10 +182,19 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 
 		Object obj = provider.getProperties().getThreadScopeAttribute("NEXT_LAYER_NEEDED_UNITS");
 		if (obj instanceof List) {
-			List list = (List) obj;
+			List<?> list = (List<?>) obj;
 			for (Object o : list) {
 				if (o instanceof BLogicUnit) {
 					BLogicUnit unit = (BLogicUnit) o;
+					if (unit.getUserAttribute("INPUT_DTO") != null) {
+						unit.addUserAttribute("INPUT_DTO", this.getPath().getUniqueKey());
+						if (unit instanceof BAssignment) {
+							BAssignment data = (BAssignment) unit;
+							BParameter p = data.getLeft();
+							p.addUserAttribute("INPUT_PARAMETER", "INPUT_PARAMETER");
+							this.addMark(p);
+						}
+					}
 					units.add(unit);
 				}
 			}
@@ -160,7 +203,7 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 		BValuable returnValue = method.getReturn();
 		if (returnValue != null) {
 
-			BAssignment result = BasicGenUtils.createInstanceWidthValue(returnValue.getBClass(), invoker);
+			BAssignment result = BasicGenUtils.createInstanceWidthValue(returnValue.getBClass(), invoker, provider);
 
 			note = view.createComment();
 			note.setNote("「" + action.getName() + "」を呼び出して実施する");
@@ -169,10 +212,13 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 			BActionModel model = (BActionModel) path.getAction();
 
 			Object presult = provider.getProperties().getThreadScopeAttribute("INVOKER_RESULT");
-			if (presult instanceof BAssignment) {
 
-				result.getLeft()
-						.setLogicName(BasicGenUtils.getOutputDtoInstanceName(result.getLeft(), method.getLogicName()));
+			if (presult instanceof BAssignment) {
+				// kill info
+				provider.getProperties().addThreadScopeAttribute("INVOKER_RESULT", "NOTHING");
+				// result.getLeft()
+				// .setLogicName(BasicGenUtils.getOutputDtoInstanceName(result.getLeft(),
+				// method.getLogicName()));
 				units.add(result);
 
 				BAssignment pr = (BAssignment) presult;
@@ -181,6 +227,7 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 				resultParent = (BParameter) resultParent.cloneAll();
 				resultParent.setClass(false);
 				resultParent.setCaller(true);
+				resultParent.getBClass().setData(true);
 
 				note = view.createComment();
 				note.setNote(model.getName() + "の処理結果");
@@ -193,16 +240,20 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 			result.getLeft().setLogicName(BasicGenUtils
 					.getOutputDtoInstanceName(BasicNaming.getVarName(old.getReturn().getBClass()), old.getLogicName()));
 
+			result.getLeft().addUserAttribute("OUTPUT_PARAMETER", "OUTPUT_PARAMETER");
 			result.getLeft().setName(model.getName() + "の処理結果");
 
 			units.add(result);
 
 			BParameter parameter = result.getLeft();
+
 			this.addMark(parameter);
 
 		} else {
 			units.add(invoker);
 		}
+
+		// System.out.println(action.getLogicName());
 
 		return units;
 	}
@@ -216,7 +267,11 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 
 		IPatternCreator view = PatternCreatorFactory.createView();
 		BLogicProvider provider = this.getPath().getProvider();
-		BClass bclass = BasicGenUtils.createClass(action, this.getPath().getProject());
+		BProject project = this.getPath().getProject();
+		if (project == null) {
+			project = Application.getInstance().getCurrentProject();
+		}
+		BClass bclass = BasicGenUtils.createClass(action, project);
 
 		// invoker
 		BInvoker invoker = view.createMethodInvoker();
@@ -224,16 +279,10 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 		// method for invoker to be child
 		BMethod method = BasicGenUtils.createMethod(this.getPath(), bclass, action, provider, path.getProject());
 
-		// List<BasicComponentModel> models = new ArrayList<BasicComponentModel>();
-		// models.addAll(action.getInputModels());
-		// models.addAll(action.getOutputModels());
-		// method.addUserAttribute("MODELS", models);
-		// provider.onMethodCreated(bclass, method);
-
 		BValuable returnValue = method.getReturn();
 		if (returnValue != null) {
 
-			BAssignment result = BasicGenUtils.createInstanceWidthValue(returnValue.getBClass(), invoker);
+			BAssignment result = BasicGenUtils.createInstanceWidthValue(returnValue.getBClass(), invoker, provider);
 			BActionModel model = (BActionModel) path.getAction();
 
 			BParameter parameter = result.getLeft();
@@ -263,7 +312,13 @@ public class NewLayerClassLogic extends BasicLogic implements BLayerLogic {
 				parameters = actionModel.getParameters();
 			}
 
-			BeeModel impl = BasicGenUtils.createClass(action, path.getProject());
+			BProject project = this.getPath().getProject();
+			if (project == null) {
+				project = Application.getInstance().getCurrentProject();
+			}
+
+			BeeModel impl = BasicGenUtils.createClass(action, project);
+			impl.addUserAttribute("TEMP", "TEMP");
 
 			List<BParameter> list = new ArrayList<BParameter>();
 			for (Object obj : parameters) {

@@ -50,7 +50,7 @@ public class BTansferHolderNode extends BNode {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 		Rectangle rect = state.getRectangle();
 		g.setColor(Color.BLACK);
 		g.drawRect(rect.x + 5, rect.y + 5, rect.width - 10, 20);

@@ -132,10 +132,10 @@ public class ProviderManager {
 			}
 
 			@Override
-			public BClass createClass(String pack, String name) {
+			public BClass createClass(String name, String pack) {
 				BeeModel model = new BeeModel();
-				model.setLogicName(pack);
-				model.setPackage(name);
+				model.setLogicName(name);
+				model.setPackage(pack);
 				return model;
 			}
 
@@ -264,7 +264,8 @@ public class ProviderManager {
 
 			@Override
 			public BAssignment createInstance(BClass bclass) {
-				return BasicGenUtils.createInstance(bclass);
+				return BasicGenUtils.createInstance(bclass,
+						Application.getInstance().getBasicSpective().getSelection().getProvider());
 			}
 
 		};

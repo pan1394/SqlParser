@@ -93,7 +93,15 @@ public class ComplexNode extends BasicNode implements Serializable, ILogic, BVar
 
 	@Override
 	public String getName() {
-		return this.name;
+		if (name == null) {
+			return null;
+		}
+		String s = name;
+		s = s.replace("\r\n", "");
+		s = s.replace("\r", "");
+		s = s.replace("\n", "");
+		return s;
+
 	}
 
 	@Override

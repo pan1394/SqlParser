@@ -44,7 +44,11 @@ public class NoteNode extends BasicNode implements Serializable, IClassMember, I
 
 	@Override
 	public String getNote() {
-		return this.toString();
+		String s = this.toString();
+		s = s.replace("\r\n", "");
+		s = s.replace("\r", "");
+		s = s.replace("\n", "");
+		return s;
 	}
 
 	private String nodeDesc = "インライン説明、実際のロジックに影響を与えない";

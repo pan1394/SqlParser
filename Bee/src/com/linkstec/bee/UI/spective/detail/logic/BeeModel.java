@@ -662,13 +662,18 @@ public class BeeModel extends mxGraphModel
 		return this.anonymous;
 	}
 
+	private boolean data = false;
+
 	@Override
 	public void setData(boolean data) {
-
+		this.data = data;
 	}
 
 	@Override
 	public boolean isData() {
+		if (data) {
+			return true;
+		}
 		List<BAnnotation> annos = this.getAnnotations();
 		for (BAnnotation anno : annos) {
 			if (anno.getBClass().getQualifiedName().equals(Data.class.getName())) {

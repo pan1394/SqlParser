@@ -22,13 +22,16 @@ public class BJudgeNode extends BLogicNode implements IJudgeCell {
 
 	@Override
 	public List<ILogicCell> getYes() {
+
 		List<ILogicCell> cells = new ArrayList<ILogicCell>();
 		List<ILogicConnector> list = this.getConnectors();
 		for (ILogicConnector cell : list) {
 			if (cell.getType() == ILogicConnector.YES) {
 				ILogicCell logic = cell.getNext();
+
 				while (true) {
 					cells.add(logic);
+
 					if (logic instanceof ILogicCell) {
 						ILogicCell unit = (ILogicCell) logic;
 						logic = BasicGenUtils.getNext((BNode) unit, logic.getLogic().getPath());

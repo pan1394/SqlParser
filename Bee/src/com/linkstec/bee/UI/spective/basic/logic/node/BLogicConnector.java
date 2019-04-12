@@ -1,5 +1,7 @@
 package com.linkstec.bee.UI.spective.basic.logic.node;
 
+import com.linkstec.bee.core.fw.basic.BJudgeLogic;
+import com.linkstec.bee.core.fw.basic.BLogic;
 import com.linkstec.bee.core.fw.basic.IJudgeCell;
 import com.linkstec.bee.core.fw.basic.ILogicCell;
 import com.linkstec.bee.core.fw.basic.ILogicConnector;
@@ -43,8 +45,17 @@ public class BLogicConnector extends BNode implements ILogicConnector {
 	public void connected() {
 		mxICell source = this.getSource();
 		int count = source.getEdgeCount();
+		boolean isJudge = false;
 		if (source instanceof IJudgeCell) {
-			// IJudgeCell cell = (IJudgeCell) source;
+			isJudge = true;
+		} else if (source instanceof BLogicNode) {
+			BLogicNode node = (BLogicNode) source;
+			BLogic logic = node.getLogic();
+			if (logic instanceof BJudgeLogic) {
+				isJudge = true;
+			}
+		}
+		if (isJudge) {
 			this.setType(YES);
 			for (int i = 0; i < count; i++) {
 				mxICell edge = source.getEdgeAt(i);

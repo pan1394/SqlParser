@@ -4155,11 +4155,14 @@ public class mxGraph extends mxEventSource {
 
 		// Recursively includes the bounds of the children
 		if (includeDescendants) {
+
 			for (int i = 0; i < cells.length; i++) {
 				int childCount = model.getChildCount(cells[i]);
 
 				for (int j = 0; j < childCount; j++) {
-					mxRectangle tmp = getCellBounds(model.getChildAt(cells[i], j), includeEdges, true, boundingBox);
+					Object child = model.getChildAt(cells[i], j);
+
+					mxRectangle tmp = getCellBounds(child, includeEdges, true, boundingBox);
 
 					if (result != null) {
 						result.add(tmp);

@@ -2196,9 +2196,11 @@ public class CodecUtils {
 		Type t = m.getGenericReturnType();
 		b.setModifier(m.getModifiers());
 
-		// jre1.8' bug on StringBuilder
-		if (mbclass.equals(StringBuilder.class.getName()) && m.getName().equals("append")) {
-			t = StringBuilder.class;
+		if (mbclass != null) {
+			// jre1.8' bug on StringBuilder
+			if (mbclass.equals(StringBuilder.class.getName()) && m.getName().equals("append")) {
+				t = StringBuilder.class;
+			}
 		}
 
 		BVariable var = CodecUtils.makeValuableByType(m.getReturnType(), t, project);

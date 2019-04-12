@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.linkstec.bee.core.Debug;
 import com.mxgraph.util.mxEvent;
 import com.mxgraph.util.mxEventObject;
 import com.mxgraph.util.mxEventSource;
@@ -556,7 +557,18 @@ public class mxGraphModel extends mxEventSource implements mxIGraphModel, Serial
 	 * @see com.mxgraph.model.mxIGraphModel#getChildCount(Object)
 	 */
 	public int getChildCount(Object cell) {
-		return (cell instanceof mxICell) ? ((mxICell) cell).getChildCount() : 0;
+		if (cell instanceof mxICell) {
+			mxICell mx = (mxICell) cell;
+			if (mx.isEdge()) {
+				int c = mx.getChildCount();
+				if (c != 0) {
+					Debug.a();
+				}
+			}
+			return mx.getChildCount();
+		}
+		return 0;
+
 	}
 
 	/*
@@ -1124,7 +1136,11 @@ public class mxGraphModel extends mxEventSource implements mxIGraphModel, Serial
 	 * Initializes the currentEdit field if the model is deserialized.
 	 */
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-		ois.defaultReadObject();
+		try {
+			ois.defaultReadObject();
+		} catch (Exception e) {
+			// e.printStackTrace();
+		}
 		currentEdit = createUndoableEdit();
 	}
 

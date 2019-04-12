@@ -9,7 +9,6 @@ import com.linkstec.bee.UI.spective.basic.logic.edit.BLogicEditActions;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPatternModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BPatternSheet;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BTableSelectModel;
-import com.linkstec.bee.UI.spective.basic.logic.edit.BTableSelectSheet;
 import com.linkstec.bee.UI.spective.basic.logic.model.table.BSegmentLogic;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.ITableSql;
@@ -77,16 +76,15 @@ public class BTableUnionNode extends BTableGroupNode {
 			} else {
 				logic.setName(editedName);
 			}
-
-			BTableSelectSheet editor = (BTableSelectSheet) BLogicEditActions.addNewTypeEditor(sheet.getProject(), path,
-					book, ProcessType.TYPE_TABLE);
+			path.addUserAttribute("NES_SELECT", "NES_SELECT");
+			BLogicEditActions.addNewTypeEditor(sheet.getProject(), path, book, ProcessType.TYPE_TABLE);
 
 		}
 	}
 
 	@Override
 	public String getSQL(ITableSql tsql) {
-		BPath path = this.getLogic().getPath();
+		// BPath path = this.getLogic().getPath();
 		boolean format = tsql.isFormat();
 		BTableSelectModel model = null;
 		List<BEditorModel> models = tsql.getEditors();
@@ -114,7 +112,7 @@ public class BTableUnionNode extends BTableGroupNode {
 
 	@Override
 	public String getSQLExp(ITableSql tsql) {
-		BPath path = this.getLogic().getPath();
+		// BPath path = this.getLogic().getPath();
 		boolean format = tsql.isFormat();
 		BTableSelectModel model = null;
 		List<BEditorModel> models = tsql.getEditors();

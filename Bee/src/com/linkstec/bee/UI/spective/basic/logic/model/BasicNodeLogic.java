@@ -11,8 +11,10 @@ import com.linkstec.bee.UI.spective.basic.logic.node.BDetailNodeWrapper;
 import com.linkstec.bee.UI.spective.detail.BeeGraphSheet;
 import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.codec.PatternCreatorFactory;
+import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BNote;
 import com.linkstec.bee.core.fw.BParameter;
+import com.linkstec.bee.core.fw.BType;
 import com.linkstec.bee.core.fw.IPatternCreator;
 import com.linkstec.bee.core.fw.basic.BPath;
 import com.linkstec.bee.core.fw.basic.ILogicCell;
@@ -58,6 +60,21 @@ public class BasicNodeLogic extends BasicLogic {
 
 			IPatternCreator view = PatternCreatorFactory.createView();
 			BParameter para = assign.getLeft();
+
+			///////////////////////////////////////////////
+			BClass bclass = para.getBClass();
+			if (bclass.getQualifiedName().equals(List.class.getName())) {
+				List<BType> types = bclass.getParameterizedTypes();
+				for (BType type : types) {
+					if (type instanceof BClass) {
+						types.remove(type);
+						bclass.setParameterTypes(types);
+						break;
+					}
+				}
+			}
+
+			///////////////////////////////////////////////
 
 			BNote note = view.createComment();
 			note.setNote("変数「" + para.getName() + "」を作っておく");

@@ -14,7 +14,7 @@ import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IPatternCreator;
 
-public class ValueEditor extends JTextField implements DocumentListener {
+public class ValueEditor extends JTextField implements DocumentListener, ITranferRecevier {
 
 	/**
 	 * 
@@ -42,6 +42,12 @@ public class ValueEditor extends JTextField implements DocumentListener {
 
 	public boolean isFireEvent() {
 		return fireEvent;
+	}
+
+	public void setDisplayName(String text) {
+		this.setFireEvent(false);
+		this.setText(text);
+		this.setFireEvent(true);
 	}
 
 	public void setFireEvent(boolean fireEvent) {
@@ -95,6 +101,11 @@ public class ValueEditor extends JTextField implements DocumentListener {
 		if (this.listener != null) {
 			listener.changed(messageID, index, value);
 		}
+	}
+
+	@Override
+	public void localMove(int hashCode) {
+
 	}
 
 }

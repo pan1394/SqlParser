@@ -43,7 +43,7 @@ public class BLoopNode extends BLogicNode implements ILoopCell {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 		Rectangle rect = state.getRectangle();
 		g.setColor(Color.BLACK);
 

@@ -76,6 +76,8 @@ public class BeeConstants {
 	public static final ImageIcon PROJECT_IMPORT = new BeeIcon(
 			BeeConstants.class.getResource("/com/linkstec/bee/UI/images/icons/project_import.gif"));
 
+	public static final ImageIcon REFERENCE_ICON = new BeeIcon(
+			BeeConstants.class.getResource("/com/linkstec/bee/UI/images/icons/reference.gif"));
 	public static final ImageIcon GROUP_ICON = new BeeIcon(
 			BeeConstants.class.getResource("/com/linkstec/bee/UI/images/icons/group.gif"));
 	public static final ImageIcon NEXT_ICON = new BeeIcon(

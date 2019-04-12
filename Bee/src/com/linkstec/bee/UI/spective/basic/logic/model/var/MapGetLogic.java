@@ -65,7 +65,7 @@ public class MapGetLogic extends BasicLogic {
 				return BValueUtils.createValuable(target, false) + "から「" + BValueUtils.createValuable(key, false)
 						+ "」で値を取得する";
 			}
-			return BValueUtils.createValuable(target, false) + "から[DragIn]でから値を取得する";
+			return BValueUtils.createValuable(target, false) + "から[DragIn]で値を取得する";
 		} else {
 			return "";
 		}
@@ -86,6 +86,11 @@ public class MapGetLogic extends BasicLogic {
 		if (this.key != null) {
 			IPatternCreator view = PatternCreatorFactory.createView();
 			BInvoker invoker = view.createMethodInvoker();
+			if (this.target instanceof BVariable) {
+				BVariable var = (BVariable) this.target;
+				var.setClass(false);
+				var.setCaller(true);
+			}
 			invoker.setInvokeParent(this.target);
 			BMethod method = view.createMethod();
 			method.setLogicName("get");

@@ -60,7 +60,7 @@ public class LogMessagePanel extends JPanel {
 
 	private void spliteMessage(String message) {
 		int left = message.indexOf('{');
-		if (left > 0) {
+		if (left >= 0) {
 			int right = message.indexOf('}');
 			if (right > 0) {
 				String s1 = message.substring(0, left);

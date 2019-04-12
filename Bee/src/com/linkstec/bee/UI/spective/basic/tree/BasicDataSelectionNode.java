@@ -18,6 +18,7 @@ import com.linkstec.bee.core.codec.PatternCreatorFactory;
 import com.linkstec.bee.core.codec.basic.BasicGenUtils;
 import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BParameter;
+import com.linkstec.bee.core.fw.BValuable;
 import com.linkstec.bee.core.fw.BVariable;
 import com.linkstec.bee.core.fw.IPatternCreator;
 import com.linkstec.bee.core.fw.basic.BLogic;
@@ -113,6 +114,7 @@ public class BasicDataSelectionNode extends BeeTreeNode {
 
 		if (!nodes.isEmpty()) {
 			if (!this.isChecked()) {
+				nodes.clear();
 				mxCell cell = makeTransferNode(this);
 				if (cell instanceof BNode) {
 					BNode t = (BNode) cell;
@@ -128,6 +130,7 @@ public class BasicDataSelectionNode extends BeeTreeNode {
 					BasicNode b = (BasicNode) cell;
 					BDetailNodeWrapper w = new BDetailNodeWrapper(
 							Application.getInstance().getBasicSpective().getSelection().getActionPath(), b);
+
 					list.add(w);
 
 				}
@@ -141,7 +144,7 @@ public class BasicDataSelectionNode extends BeeTreeNode {
 		return makeTransferNode(this);
 	}
 
-	public static mxCell makeTransferNode(BasicDataSelectionNode selected) {
+	public static mxCell makeTransferNodeback(BasicDataSelectionNode selected) {
 		Object obj = selected.getUserObject();
 		Object parent = selected.getParent();
 		if (obj instanceof BAssignment) {
@@ -184,6 +187,81 @@ public class BasicDataSelectionNode extends BeeTreeNode {
 			if (current instanceof BTableSheet) {
 				BTableObjectNode node = new BTableObjectNode(var);
 				return node;
+			}
+		} else if (obj instanceof BLogic) {
+			BLogic logic = (BLogic) obj;
+			logic.getPath().setParent(null);
+			return (mxCell) logic.getPath().getCell();
+		}
+
+		if (obj instanceof mxCell) {
+			return (mxCell) obj;
+		}
+
+		return null;
+	}
+
+	public static mxCell makeTransferNode(BasicDataSelectionNode selected) {
+		if (selected == null) {
+			return null;
+		}
+		Object obj = selected.getUserObject();
+		if (obj == null) {
+			return null;
+		}
+		BasicDataSelectionNode parent = (BasicDataSelectionNode) selected.getParent();
+		mxCell parentObj = makeTransferNode(parent);
+		if (obj instanceof BAssignment) {
+			BValuable para = null;
+			BAssignment var = (BAssignment) obj;
+			if (parentObj instanceof BValuable) {
+				para = (BValuable) parentObj;
+
+			} else if (parentObj instanceof BTableObjectNode) {
+				BTableObjectNode table = (BTableObjectNode) parentObj;
+				para = table.getParameter();
+			}
+
+			if (para != null) {
+				IPatternCreator view = PatternCreatorFactory.createView();
+				BInvoker invoker = view.createMethodInvoker();
+				invoker.setInvokeParent(para);
+				BVariable child = BasicGenUtils.toView(var.getLeft());
+				invoker.setInvokeChild(child);
+				if (selected.isAs()) {
+					invoker.addUserAttribute("AS", "AS");
+				} else if (selected.isInput()) {
+					invoker.addUserAttribute("INPUT_PARAMETER_VALUE", "INPUT_PARAMETER_VALUE");
+				}
+				return (mxCell) invoker;
+			}
+
+		} else if (obj instanceof BasicDataModel) {
+			// component ,only for table sheet
+			BasicDataModel model = (BasicDataModel) obj;
+			BParameter p = PatternCreatorFactory.createView().createParameter();
+			p.setBClass(model);
+			BTableObjectNode node = new BTableObjectNode(p);
+			return node;
+		} else if (obj instanceof BParameter) {
+			// Debug.d();
+			BParameter var = (BParameter) obj;
+			BEditor current = Application.getInstance().getBasicSpective().getSelection().getEditor();
+			if (current instanceof BTableSheet) {
+				BTableObjectNode node = new BTableObjectNode(var);
+				return node;
+			} else {
+
+				if (parentObj instanceof BValuable) {
+					BValuable para = (BValuable) parentObj;
+					IPatternCreator view = PatternCreatorFactory.createView();
+					BInvoker invoker = view.createMethodInvoker();
+					invoker.setInvokeParent(para);
+					BVariable child = BasicGenUtils.toView(var);
+					invoker.setInvokeChild(child);
+					return (mxCell) invoker;
+				}
+				return (mxCell) BasicGenUtils.toView(var);
 			}
 		} else if (obj instanceof BLogic) {
 			BLogic logic = (BLogic) obj;

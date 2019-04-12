@@ -10,11 +10,12 @@ import javax.swing.tree.TreeNode;
 import com.linkstec.bee.UI.BeeConstants;
 import com.linkstec.bee.UI.editor.task.console.ConsoleDisplay;
 import com.linkstec.bee.UI.spective.basic.BasicEditDataSelection;
-import com.linkstec.bee.UI.spective.basic.data.BasicDataModel;
 import com.linkstec.bee.UI.spective.basic.logic.model.LogicList;
-import com.linkstec.bee.UI.spective.basic.logic.model.table.BFixedValueLogic;
+import com.linkstec.bee.UI.spective.basic.logic.model.data.PluralDataLogicList;
 import com.linkstec.bee.UI.spective.basic.logic.model.var.VarLogicList;
+import com.linkstec.bee.UI.spective.basic.logic.node.BDataCopyNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.BNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.BTansferHolderNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BFiexedReturnValueNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BFixedValueNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableGroupNode;
@@ -23,6 +24,7 @@ import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableRecordListNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableTargetTablesNode;
 import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableValueNode;
+import com.linkstec.bee.UI.spective.basic.logic.node.table.BTableWithSelectNode;
 import com.linkstec.bee.UI.spective.basic.tree.BasicDataSelectionNode;
 import com.linkstec.bee.UI.spective.basic.tree.BasicEditNode;
 import com.linkstec.bee.core.Application;
@@ -44,6 +46,7 @@ import com.linkstec.bee.core.fw.editor.BEditorModel;
 import com.linkstec.bee.core.fw.editor.BProject;
 import com.linkstec.bee.core.fw.logic.BAssignment;
 import com.linkstec.bee.core.fw.logic.BInvoker;
+import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxICell;
 import com.mxgraph.util.mxPoint;
@@ -93,32 +96,38 @@ public class BTableSheet extends BPatternSheet {
 				}
 			}
 		}
-		// TODO for test
-		// System.out.println(model.getSQL(true, invokers, models));
-		// System.out.println(model.getSQL(false, invokers, models));
-		// System.out.println(model.getSQLExp(true, models));
+		console.addText("-----------論理SQL------------", this.getProject());
+		String exp = model.getSQLExp(bmodel);
+		ss = exp.split("\r\n");
+		for (String s : ss) {
+			if (!s.trim().equals("")) {
+				s = s.replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
+				s = "<span>" + s + "</span>";
+				if (!s.equals("")) {
+					console.addText(s, this.getProject());
+				}
+			}
+		}
 
-		if (logic instanceof BTableTargetTablesNode)
-
-		{
+		if (logic instanceof BTableTargetTablesNode) {
 			super.makeDataSelectionIO(root, action);
 
-		} else if (logic instanceof ILogicCell) {
+		} else if (logic instanceof ILogicCell || logic instanceof BTableValueNode) {
 			List<ITableObject> list = this.getDefinedTables();
 			if (list != null) {
 				for (ITableObject object : list) {
 					BasicDataSelectionNode c = new BasicDataSelectionNode(this.getProject());
 					c.setUserObject(object.getModel(models));
-					c.setDisplay(object.getModel(models).getBClass().getName() + " "
-							+ object.getModel(models).getLogicName());
+					c.setDisplay(
+							object.getModel(models).getBClass().getName() + " " + object.getModel(models).getName());
 					c.setImageIcon(BeeConstants.VAR_COLUMN_ICON);
 					c.setLeaf(false);
 					root.add(c);
 				}
 			}
-			super.makeDataSelectionWhenSelected(root, logic);
 
 		}
+		super.makeDataSelectionWhenSelected(root, logic);
 
 		BasicDataSelectionNode nesSql = new BasicDataSelectionNode(this.getProject());
 		BTableNesSelectNode select = new BTableNesSelectNode(null);
@@ -127,22 +136,19 @@ public class BTableSheet extends BPatternSheet {
 		nesSql.setImageIcon(BeeConstants.GREEN_STAR_ICON);
 		root.add(nesSql);
 
+		BasicDataSelectionNode with = new BasicDataSelectionNode(this.getProject());
+		BTableWithSelectNode widthNode = new BTableWithSelectNode(null);
+		with.setUserObject(widthNode);
+		with.setDisplay("WITH追加");
+		with.setImageIcon(BeeConstants.GREEN_STAR_ICON);
+		root.add(with);
+
 		BasicDataSelectionNode returnSql = new BasicDataSelectionNode(this.getProject());
 		BFiexedReturnValueNode r = new BFiexedReturnValueNode();
 		returnSql.setUserObject(r);
 		returnSql.setDisplay("改行");
 		returnSql.setImageIcon(BeeConstants.GREEN_STAR_ICON);
 		root.add(returnSql);
-
-		BFixedValueNode fixed = new BFixedValueNode();
-		BFixedValueLogic fl = new BFixedValueLogic(null, fixed);
-		fixed.setLogic(fl);
-
-		BasicDataSelectionNode fixedNode = new BasicDataSelectionNode(this.getProject());
-		fixedNode.setUserObject(fl);
-		fixedNode.setDisplay("固定値");
-		fixedNode.setImageIcon(BeeConstants.GREEN_STAR_ICON);
-		root.add(fixedNode);
 
 		BPath p = path;
 
@@ -243,19 +249,28 @@ public class BTableSheet extends BPatternSheet {
 	}
 
 	@Override
-	public void makeLogics(Object obj, Object prentObj, BasicEditNode parent, BPath path, DefaultTreeModel model) {
+	public void makeLogics(BasicDataSelectionNode select, BasicEditNode parent, BPath path, DefaultTreeModel model) {
 		LogicList logicList = null;
-		if (obj instanceof BParameter) {
-			if (prentObj instanceof BasicDataModel) {
-				BasicDataModel data = (BasicDataModel) prentObj;
-				BParameter assign = (BParameter) obj;
-				logicList = new VarLogicList(data, assign);
+		mxCell cell = select.getTransferNode();
+
+		if (cell instanceof BInvoker) {
+			BInvoker invoker = (BInvoker) cell;
+
+			logicList = new VarLogicList(invoker);
+
+		} else if (cell instanceof BVariable) {
+			BVariable var = (BVariable) cell;
+			BClass bclass = var.getBClass();
+			if (bclass.getQualifiedName().equals(List.class.getName())) {
+				logicList = new PluralDataLogicList(path, var);
+			} else {
+				logicList = new VarLogicList(var, var);
 			}
-		} else if (obj instanceof BAssignment) {
-			BAssignment assign = (BAssignment) obj;
-			if (prentObj instanceof BVariable) {
-				BVariable para = (BVariable) prentObj;
-				logicList = new VarLogicList(para, assign.getLeft());
+		} else if (cell instanceof BTansferHolderNode) {
+			BTansferHolderNode holder = (BTansferHolderNode) cell;
+			List<BNode> nodes = holder.getNodes();
+			for (BNode n : nodes) {
+				this.makeCell(n, parent, path, model);
 			}
 		}
 		if (logicList != null) {
@@ -305,9 +320,22 @@ public class BTableSheet extends BPatternSheet {
 					layoutGroups(node, x, y, lastX, lastY);
 				} else if (child instanceof BTableNode) {
 					BTableNode table = (BTableNode) child;
-					table.doLayout();
+					table.doLayout(this);
 					table.getGeometry().setX(10);
-					table.getGeometry().setY(y + 20);
+
+					double py = y + 20;
+					Object[] cells = this.getGraph().getCellsBeyond(0, py, this.getRoot(), true, true);
+					for (Object obj : cells) {
+						if (!(obj instanceof BTableGroupNode) && !obj.equals(table)) {
+							BNode bnode = (BNode) obj;
+							double ny = bnode.getGeometry().getY() + bnode.getGeometry().getHeight() + 20;
+							py = Math.max(py, ny);
+						}
+					}
+					table.getGeometry().setY(py);
+
+				} else if (child instanceof BDataCopyNode) {
+
 				}
 
 				lastX = x;

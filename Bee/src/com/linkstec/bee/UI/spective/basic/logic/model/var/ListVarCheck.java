@@ -42,7 +42,7 @@ public class ListVarCheck extends VarCheckLogic {
 	}
 
 	@Override
-	protected BExpression getExpression(ITableSql tsql) {
+	public BExpression getExpression(ITableSql tsql) {
 		if (var != null) {
 			if (tsql != null) {
 				// do nothing

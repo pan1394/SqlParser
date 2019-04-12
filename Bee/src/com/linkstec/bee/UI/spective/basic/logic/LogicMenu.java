@@ -1,7 +1,11 @@
 package com.linkstec.bee.UI.spective.basic.logic;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 
 import javax.swing.ImageIcon;
@@ -124,8 +128,35 @@ public class LogicMenu extends BasicMenu {
 		root.add(node);
 
 		Enumeration<Object> keys = properties.keys();
+		List<String> list = new ArrayList<String>();
 		while (keys.hasMoreElements()) {
 			String key = (String) keys.nextElement();
+			list.add(key);
+		}
+
+		Object[] array = list.toArray();
+		Arrays.sort(array, new Comparator<Object>() {
+
+			@Override
+			public int compare(Object oo1, Object oo2) {
+				String o1 = oo1.toString();
+				String o2 = oo2.toString();
+
+				int len = o1.length();
+				for (int i = 0; i < len; i++) {
+					char c1 = o1.charAt(i);
+					char c2 = o2.charAt(i);
+					if (c1 != c2) {
+						return c1 - c2 > 0 ? 1 : -1;
+					}
+				}
+				return 0;
+			}
+
+		});
+
+		for (Object k : array) {
+			String key = (String) k;
 			String value = properties.getProperty(key);
 			LogicMenuNode child = new LogicMenuNode(project);
 

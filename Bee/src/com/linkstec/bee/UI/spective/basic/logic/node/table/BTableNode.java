@@ -3,6 +3,7 @@ package com.linkstec.bee.UI.spective.basic.logic.node.table;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.UI.spective.basic.data.BasicComponentModel;
 import com.linkstec.bee.UI.spective.basic.data.BasicDataModel;
 import com.linkstec.bee.UI.spective.basic.logic.edit.BActionModel;
@@ -84,7 +85,7 @@ public class BTableNode extends BNode implements ILogicCell, BTableElement {
 	}
 
 	@Override
-	public void doLayout() {
+	public void doLayout(BasicLogicSheet sheet) {
 		int count = this.getChildCount();
 		double height = 0;
 		double width = 0;
@@ -92,7 +93,7 @@ public class BTableNode extends BNode implements ILogicCell, BTableElement {
 			mxICell child = this.getChildAt(i);
 			if (child instanceof BTableRowNode) {
 				BTableRowNode node = (BTableRowNode) child;
-				node.doLayout();
+				node.doLayout(sheet);
 				node.getGeometry().setOffset(new mxPoint(0, height));
 				height = height + node.getGeometry().getHeight();
 				width = Math.max(node.getGeometry().getWidth(), width);
@@ -111,7 +112,9 @@ public class BTableNode extends BNode implements ILogicCell, BTableElement {
 			if (child instanceof BTableRowNode) {
 				BTableRowNode node = (BTableRowNode) child;
 				BLogic logic = node.getLogic();
-				units.add(logic);
+				if (logic != null) {
+					units.add(logic);
+				}
 			}
 		}
 
@@ -131,12 +134,58 @@ public class BTableNode extends BNode implements ILogicCell, BTableElement {
 
 	@Override
 	public String getSQL(ITableSql tsql) {
-		return "";
+
+		tsql.getProvider().getProperties().addThreadScopeAttribute("UP_INSER", "UP_INSER");
+
+		String sql = "";
+		int count = this.getChildCount();
+
+		for (int i = 0; i < count; i++) {
+			mxICell child = this.getChildAt(i);
+			if (child instanceof BTableRowNode) {
+				BTableRowNode node = (BTableRowNode) child;
+				String s = node.getSQL(tsql);
+				if (s != null) {
+					sql = sql + s + ",";
+					if (tsql.isFormat()) {
+						sql = sql + "\r\n\t";
+					}
+				}
+			}
+		}
+		sql = sql.trim();
+		if (sql.length() > 2) {
+			sql = sql.substring(0, sql.length() - 1);
+		}
+
+		tsql.getProvider().getProperties().addThreadScopeAttribute("UP_INSER", "");
+
+		return sql;
 	}
 
 	@Override
 	public String getSQLExp(ITableSql tsql) {
-		return "";
+		tsql.getProvider().getProperties().addThreadScopeAttribute("UP_INSER", "UP_INSER");
+
+		String sql = "";
+		int count = this.getChildCount();
+
+		for (int i = 0; i < count; i++) {
+			mxICell child = this.getChildAt(i);
+			if (child instanceof BTableRowNode) {
+				BTableRowNode node = (BTableRowNode) child;
+				String s = node.getSQLExp(tsql);
+				if (s != null) {
+					sql = sql + s + ",";
+					if (tsql.isFormat()) {
+						sql = sql + "\r\n";
+					}
+				}
+			}
+		}
+		tsql.getProvider().getProperties().addThreadScopeAttribute("UP_INSER", "");
+
+		return sql;
 	}
 
 }

@@ -11,7 +11,9 @@ import com.linkstec.bee.UI.node.BasicNode;
 import com.linkstec.bee.UI.node.ComplexNode;
 import com.linkstec.bee.UI.node.ExpressionNode;
 import com.linkstec.bee.UI.node.ParameterNode;
+import com.linkstec.bee.UI.spective.basic.BasicLogicSheet;
 import com.linkstec.bee.UI.spective.basic.logic.model.BasicNodeLogic;
+import com.linkstec.bee.UI.spective.basic.logic.model.var.JudgeLogic;
 import com.linkstec.bee.UI.spective.basic.logic.node.layout.BLogicLayout;
 import com.linkstec.bee.core.codec.util.BValueUtils;
 import com.linkstec.bee.core.codec.util.CodecUtils;
@@ -27,6 +29,7 @@ import com.linkstec.bee.core.fw.basic.ILogicCell;
 import com.linkstec.bee.core.fw.basic.ILoopCell;
 import com.linkstec.bee.core.fw.editor.BProject;
 import com.linkstec.bee.core.fw.logic.BAssignment;
+import com.linkstec.bee.core.fw.logic.BExpression;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxICell;
 
@@ -44,11 +47,17 @@ public class BDetailNodeWrapper extends BNode implements ILogicCell {
 		this.setStyle("align=center;strokeWidth=0.5;strokeColor=gray;rounded=1");
 		mxICell parent = node.getParent();
 		this.setGeometry((mxGeometry) node.getGeometry().clone());
-		if ((!(parent instanceof BNode)) || parent instanceof IBodyCell || parent instanceof ILoopCell) {
+
+		if (parent != null
+				&& ((!(parent instanceof BNode)) || parent instanceof IBodyCell || parent instanceof ILoopCell)) {
 
 			this.node = this.makeValue(node, path.getProject());
 			if (this.node == null) {
 				this.node = BLockNode.difineVar(node);
+				if (node instanceof BAssignment) {
+					BAssignment a = (BAssignment) node;
+					a.getLeft().setName("変数．" + a.getLeft().getName());
+				}
 			}
 		} else {
 			this.node = node;
@@ -71,7 +80,7 @@ public class BDetailNodeWrapper extends BNode implements ILogicCell {
 				ParameterNode node = new ParameterNode();
 				node.setBClass(bclass);
 				node.setName(complex.getName());
-				node.setLogicName("m" + complex.getLogicName().toLowerCase());
+				node.setLogicName(complex.getLogicName().toLowerCase());
 				assign.setLeft(node);
 
 				BVariable value = new ComplexNode();
@@ -90,7 +99,7 @@ public class BDetailNodeWrapper extends BNode implements ILogicCell {
 				ParameterNode node = new ParameterNode();
 				node.setBClass(bclass);
 				node.setName(complex.getName());
-				node.setLogicName("m" + complex.getLogicName().toLowerCase());
+				node.setLogicName(complex.getLogicName().toLowerCase());
 				assign.setLeft(node);
 
 				BVariable value = new ComplexNode();
@@ -122,13 +131,68 @@ public class BDetailNodeWrapper extends BNode implements ILogicCell {
 	}
 
 	@Override
+	public boolean isValidDropTarget(Object[] cells) {
+		if (node instanceof BAssignment) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public void childAdded(BNode node, BasicLogicSheet sheet) {
+		if (node instanceof BDetailNodeWrapper) {
+			BDetailNodeWrapper n = (BDetailNodeWrapper) node;
+			BasicNode b = n.getNode();
+			this.cellAdded(b);
+		} else if (node instanceof BLogicNode) {
+			BLogicNode b = (BLogicNode) node;
+			BLogic logic = b.getLogic();
+			if (logic instanceof JudgeLogic) {
+				JudgeLogic judge = (JudgeLogic) logic;
+				BValuable value = judge.getExpression(null);
+				value = (BValuable) value.cloneAll();
+				if (value instanceof BValuable) {
+					this.cellAdded((mxICell) value);
+				}
+			}
+		}
+		node.removeFromParent();
+	}
+
+	@Override
+	public void cellAdded(mxICell cell) {
+		if (node instanceof BAssignment) {
+			BAssignment assign = (BAssignment) node;
+			if (cell instanceof BValuable) {
+				BValuable value = (BValuable) cell;
+				assign.setRight(value, null);
+
+			} else if (cell instanceof BAssignment) {
+				BAssignment a = (BAssignment) cell;
+				BValuable value = a.getRight();
+
+				if (value instanceof mxICell) {
+					if (value.getBClass() == null) {
+						value = a.getLeft();
+					}
+					this.cellAdded((mxICell) value);
+				}
+			}
+
+			this.logic.getPath().setCell(this);
+		}
+
+	}
+
+	@Override
 	public Object getValue() {
 		if (node instanceof BAssignment) {
 			BAssignment assgin = (BAssignment) node;
 			BParameter var = assgin.getLeft();
 			String s = "変数[" + var.getName() + "]を作っておく";
 			BValuable right = assgin.getRight();
-			if (right != null) {
+			if ((right != null && right.getBClass() != null) || right instanceof BExpression) {
 				s = "変数[" + var.getName() + "]=" + BValueUtils.createValuable(right, false);
 			}
 			BNode node = BLogicLayout.reshape(this, s);

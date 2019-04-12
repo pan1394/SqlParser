@@ -62,8 +62,8 @@ import com.linkstec.bee.UI.thread.BeeThread;
 import com.linkstec.bee.core.Application;
 import com.linkstec.bee.core.P;
 import com.linkstec.bee.core.ProjectClassLoader;
+import com.linkstec.bee.core.codec.basic.BProvider;
 import com.linkstec.bee.core.codec.basic.BasicGen;
-import com.linkstec.bee.core.codec.basic.TestCaseGen;
 import com.linkstec.bee.core.codec.decode.BeeCompiler;
 import com.linkstec.bee.core.codec.decode.BeeCompilerTaskListener;
 import com.linkstec.bee.core.codec.decode.DecodeGen;
@@ -71,6 +71,8 @@ import com.linkstec.bee.core.codec.encode.JavaGen;
 import com.linkstec.bee.core.codec.excel.ExcelExport;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
+import com.linkstec.bee.core.fw.BModule;
+import com.linkstec.bee.core.fw.BParameter;
 import com.linkstec.bee.core.fw.BeeClassExistsException;
 import com.linkstec.bee.core.fw.editor.BEditor;
 import com.linkstec.bee.core.fw.editor.BProject;
@@ -1539,7 +1541,7 @@ public class CodecAction {
 					ConsoleDisplay c = Application.getInstance().getBasicSpective().getTask().getConsole();
 					c.clear();
 					c.addText("Anylizing,wait please....", project);
-					BasicGen gen = new BasicGen(model, project, c);
+					BasicGen gen = new BasicGen(model, project, c, new ArrayList<BParameter>());
 
 					c.clear();
 					gen.saveAll(c);
@@ -1563,57 +1565,47 @@ public class CodecAction {
 
 	}
 
-	public static class TestAction extends AbstractAction {
+	public static class GenerateTestCase extends BasicAction {
 
 		/**
 		 * 
 		 */
-		private static final long serialVersionUID = -222333344343234L;
-		private BasicBookModel model;
+		private static final long serialVersionUID = -6391253105634843117L;
+		private BModule module;
 		private BProject project;
-		private BasicBook book;
 
-		public TestAction() {
-		}
-
-		public TestAction(BasicBook sheet, BProject project) {
-			this.book = sheet;
-			this.model = sheet.getALLModel();
+		public GenerateTestCase(BModule module, BProject project) {
+			this.module = module;
 			this.project = project;
 		}
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-
-			doGenerateBasicRun(new Runnable() {
-
-				@Override
-				public void run() {
-					model.validateLayers(book);
-					Application.getInstance().getBasicSpective().getTask().setTaskConsoleSelected();
-					ConsoleDisplay c = Application.getInstance().getBasicSpective().getTask().getConsole();
-					c.clear();
-					c.addText("Anylizing,wait please....", project);
-					TestCaseGen gen = new TestCaseGen(model, project, c);
-
-					c.clear();
-					gen.saveAll(c);
-					c.end();
-				}
-			});
+			generate();
 
 		}
 
-		public void doGenerateBasicRun(Runnable run) {
-			BeeThread t = new BeeThread(run);
+		public File generate() {
+			long time = System.currentTimeMillis();
+			ConsoleDisplay c = Application.getInstance().getDesignSpective().getTask().getConsole();
+			generateCase(c, project, module);
+			return null;
 
-			ThreadParameter parameter = new ThreadParameter();
-			parameter.setDoLinkedObject(false);
+		}
 
-			t.setUserObject(parameter);
-			t.setName("BEE_RUN");
-			Application.getInstance().getBasicSpective().getTask().getConsole().start(t);
-			t.start();
+		public static void generateCase(ConsoleDisplay c, BProject project, BModule module) {
+			c.addText("Start to generate...", project);
+			BProvider p = new BProvider(null, null);
+
+			c.addText("[4.詳細設計Excel]Excelエクスポートが開始します。 ", project);
+			// do export
+			File file = p.doDetailExport(project, module, null);// sqlSet not assigened
+			if (file != null) {
+				c.addText("[4.詳細設計Excel]<a href='f://" + file.getAbsolutePath() + "'>" + file.getName()
+						+ "</a>へExcelエクスポートしました。", project);
+			} else {
+				c.addText("[4.詳細設計Excel]Excelエクスポートできませんでした。", project);
+			}
 		}
 
 	}

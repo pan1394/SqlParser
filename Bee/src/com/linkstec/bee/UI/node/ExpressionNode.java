@@ -155,6 +155,9 @@ public class ExpressionNode extends BasicNode implements Serializable, BExpressi
 
 	@Override
 	public void setExMiddle(BLogiker logiker) {
+		if (logiker == null) {
+			return;
+		}
 		this.getCellByBID(this.middleBID).setValue(logiker);
 		if (logiker.getLogicName().equals(BLogiker.NOT.getLogicName())) {
 			this.getCellByBID(this.rightBID).removeFromParent();

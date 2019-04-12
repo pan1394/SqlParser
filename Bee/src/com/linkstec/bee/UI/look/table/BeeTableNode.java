@@ -360,7 +360,7 @@ public class BeeTableNode extends BObjectImpl implements BAssignment, Serializab
 		if (obj instanceof BClass) {
 			BClass type = (BClass) obj;
 
-			if (!name.equals("") && !logicName.equals("") && type != null) {
+			if (name != null && logicName != null && !name.equals("") && !logicName.equals("") && type != null) {
 				left.setName(name);
 				left.setLogicName(logicName);
 				left.setBClass(type);

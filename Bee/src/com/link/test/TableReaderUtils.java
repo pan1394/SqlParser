@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -21,7 +22,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import com.linkstec.bee.UI.spective.basic.config.model.ComponentTypeModel;
 import com.linkstec.bee.UI.spective.basic.config.model.ModelConstants;
 import com.linkstec.bee.UI.spective.basic.data.BasicComponentModel;
-import com.linkstec.bee.core.Debug;
 import com.linkstec.bee.core.codec.util.CodecUtils;
 import com.linkstec.bee.core.fw.BClass;
 import com.linkstec.bee.core.fw.BParameter;
@@ -30,15 +30,24 @@ import com.linkstec.bee.core.impl.BAssignmentImpl;
 import com.linkstec.bee.core.impl.BParameterImpl;
 
 public class TableReaderUtils {
-
-	private static String path = "D:/Bee/beny/test/batchtabls.xlsx";
-	private static String dataPath = "D:\\Bee\\application\\beny\\basic\\CMN";
+	// バッチwkテーブルレイアウト一覧-rev19548.xlsx
+	private static String path = "D:/Bee/beny/toAWS/online.xlsx";
+	private static String dataPath = "D:\\Bee\\beny\\test\\tabletest";
+	// private static String dataPath = "D:\\Bee\\application\\beny\\basic\\CMN";
 
 	public static void main(String[] args) {
 		Workbook workbook = getWorkBook();
 
+		Sheet domain = workbook.getSheet("ドメイン一覧");
+		Hashtable<String, String> domains = null;
+		int first = 2;
+		if (domain != null) {
+			domains = makeDomain(domain);
+			first = 3;
+		}
+
 		List<BasicComponentModel> TableEntitys = new ArrayList<BasicComponentModel>();
-		for (int i = 2; i < workbook.getNumberOfSheets(); i++) {
+		for (int i = first; i < workbook.getNumberOfSheets(); i++) {
 
 			Sheet sheet = workbook.getSheetAt(i);
 			ComponentTypeModel type = new ComponentTypeModel();
@@ -48,10 +57,10 @@ public class TableReaderUtils {
 			model.setName(sheet.getRow(4).getCell(2).getStringCellValue());
 
 			if (model.getLogicName() == null) {
-				Debug.a();
+				continue;
 			}
 			if (model.getName() == null) {
-				Debug.a();
+				continue;
 			}
 
 			boolean read = true;
@@ -78,21 +87,41 @@ public class TableReaderUtils {
 
 				BAssignment var = new BAssignmentImpl();
 				BParameter left = new BParameterImpl();
-				left.setBClass(getTypeClass(entity.getDataType()));
+				String vartype = entity.getDataType();
+				if (vartype.startsWith("*")) {
+					vartype = vartype.substring(1);
+					if (domains == null) {
+						throw new RuntimeException();
+					}
+					String v = domains.get(vartype);
+					if (v == null) {
+						throw new RuntimeException();
+					}
+					if (v.startsWith("@")) {
+						v = v.substring(1);
+					}
+					int inex = v.indexOf("(");
+					if (inex > 0) {
+						v = v.substring(0, inex);
+					}
+					left.setBClass(getTypeClass(v));
+				} else {
+					left.setBClass(getTypeClass(vartype));
+				}
 				left.setName(entity.getName());
 				left.setLogicName(makeLogicName(entity.getLogiccName()));
 				var.setLeft(left);
 
 				if (left.getBClass() == null) {
-					Debug.a();
+					throw new RuntimeException();
 				}
 
 				if (left.getLogicName() == null) {
-					Debug.a();
+					throw new RuntimeException();
 				}
 
 				if (left.getName() == null) {
-					Debug.a();
+					throw new RuntimeException();
 				}
 
 				model.addVar(var);
@@ -128,6 +157,28 @@ public class TableReaderUtils {
 			System.out.println("write object failed");
 			e.printStackTrace();
 		}
+	}
+
+	public static Hashtable<String, String> makeDomain(Sheet sheet) {
+		Hashtable<String, String> hash = new Hashtable<String, String>();
+		int index = 2;
+		while (true) {
+			Row row = sheet.getRow(index);
+
+			if (row != null) {
+
+				if (row.getCell(0) == null) {
+					break;
+				}
+				String name = row.getCell(1).getStringCellValue();
+				String type = row.getCell(2).getStringCellValue();
+				hash.put(name, type);
+			} else {
+				break;
+			}
+			index++;
+		}
+		return hash;
 	}
 
 	public static String makeLogicName(String name) {
@@ -181,13 +232,16 @@ public class TableReaderUtils {
 		if (type.startsWith("INTEGER")) {
 			return CodecUtils.getClassFromJavaClass(Integer.class, null);
 		}
+		if (type.startsWith("INT")) {
+			return CodecUtils.getClassFromJavaClass(Integer.class, null);
+		}
 		if (type.startsWith("DATE")) {
 			return CodecUtils.getClassFromJavaClass(Date.class, null);
 		}
 		if (type.startsWith("DATETIME")) {
 			return CodecUtils.getClassFromJavaClass(Timestamp.class, null);
 		}
-		return null;
+		throw new RuntimeException();
 	}
 
 	public static Workbook getWorkBook() {

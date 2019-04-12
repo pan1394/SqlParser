@@ -33,7 +33,7 @@ public class BFlowEnd extends BNode implements IEndCell {
 	}
 
 	@Override
-	public void paint(Graphics g, mxCellState state) {
+	public void paint(Graphics g, mxCellState state, double scale) {
 		if (name != null) {
 			mxRectangle box = state.getBoundingBox();
 			Rectangle rect = box.getRectangle();

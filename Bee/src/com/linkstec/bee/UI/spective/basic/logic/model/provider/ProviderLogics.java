@@ -43,6 +43,7 @@ public class ProviderLogics {
 		}
 
 		BLogicProvider p = parent.getProvider();
+		p.getProperties().setReload(reload);
 
 		BClass bclass = p.getProperties().getCurrentDeclearedClass();
 		if (bclass == null) {

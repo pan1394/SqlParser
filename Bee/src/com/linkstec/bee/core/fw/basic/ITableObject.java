@@ -11,4 +11,8 @@ public interface ITableObject extends BTableElement {
 	public BVariable getModel(List<BEditorModel> models);
 
 	public BParameter getParameter();
+
+	public String getAsParamName();
+
+	public String getAsParamLogicName();
 }
