@@ -1,0 +1,34 @@
+ 
+spring:
+#数据源德鲁伊
+  datasource:
+      druid:
+        username: test
+        #password: mbeni@916@1
+        password: test
+        #jdbcUrl: jdbc:sqlserver://127.0.0.1:1433;DatabaseName=Beny
+        jdbcUrl: jdbc:mysql://192.168.4.181:3306/test?useSSL=false
+        #driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
+        driverClassName: com.mysql.jdbc.Driver
+        initialSize: 5
+        minIdle: 5
+        maxActive: 20
+        maxWait: 60000
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        filters: stat,wall #配置过滤器
+        maxPoolPreparedStatementPerConnectionSize: 20
+        useGlobalDataSourceStat: true
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+ 
+#配置mybaits
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+ 
+  
